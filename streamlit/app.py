@@ -8,8 +8,10 @@ from influxdb import InfluxDBClient
 import dotenv
 import subprocess
 
-# telegraf_path = 'telegraf.conf'
 telegraf_path = "/app/telegraf.conf"
+ofelia_path = "/app/config.ini"
+# ofelia_path = "./config.ini"
+# telegraf_path = "./telegraf.conf"
 
 def update_config_file1(file_path, str_fields):
     with open(file_path, 'r') as file:
@@ -41,7 +43,7 @@ def log_sqlserver(st,server,user_login,password,database,table):
         cnxn = pymssql.connect(server,user_login,password,database)
         cursor = cnxn.cursor(as_dict=True)
         try:
-            cursor.execute(f'''SELECT TOP(20) * FROM {table} order by registered_at desc''')
+            cursor.execute(f'''SELECT TOP(20) * FROM {table} order by registered desc''')
             data=cursor.fetchall()
             cursor.close()
             if len(data) != 0:
@@ -58,7 +60,9 @@ def preview_production_sqlserver(server,user_login,password,database,table,mc_no
         cursor = cnxn.cursor(as_dict=True)
         # create table
         try:
-            cursor.execute(f'''SELECT TOP(5) * FROM {table} where mc_no = '{mc_no}' and process = '{process}' order by registered_at desc''')
+            a=f'''SELECT TOP(5) * FROM {table} where mc_no = '{mc_no}' and process = '{process}' order by registered desc'''
+            print(a)
+            cursor.execute(f'''SELECT TOP(5) * FROM {table} where mc_no = '{mc_no}' and process = '{process}' order by registered desc''')
             data=cursor.fetchall()
             cursor.close()
             if len(data) != 0:
@@ -73,7 +77,7 @@ def preview_influx(st,influx_server,influx_port,influx_user_login,influx_passwor
       try:
             client = InfluxDBClient(influx_server,influx_port,influx_user_login,influx_password,influx_database)
             if mqtt_topic.split('/')[0] =='data':
-                query1 = f"select time,topic,d_str1,d_str2,{column_names} from mqtt_consumer where topic = '{mqtt_topic}' order by time desc limit 5"
+                query1 = f"select time,topic,{column_names} from mqtt_consumer where topic = '{mqtt_topic}' order by time desc limit 5"
                 result1 = client.query(query1)
                 if list(result1):
                     query_list1 = list(result1)[0]
@@ -95,6 +99,90 @@ def preview_influx(st,influx_server,influx_port,influx_user_login,influx_passwor
 
       except Exception as e:
           st.error('Error: '+str(e), icon="❌")
+
+def add_column():
+    st.header("Add new SQL column")
+    old_columns = os.environ["PRODUCTION_TABLE_COLUMNS"]
+    init_project = str(os.environ["INIT_PROJECT"])
+    project_type_1 = os.environ["PROJECT_TYPE_1"]
+    init_db = str(os.environ["INIT_DB"])
+    current_columns = str(os.environ["PRODUCTION_COLUMN_NAMES"])
+
+    if project_type_1 == 'PRODUCTION' and init_db == 'True' and init_project == 'True':
+        if 'data' not in st.session_state:
+            st.session_state.data = []
+
+        with st.form("config_sensor_registry_add"):
+            col1,col2 = st.columns(2)
+            with col1:
+                col1_value = st.text_input("Enter Sensor", key="col1_input")
+            with col2:
+                col2_options = ["varchar(25)", "float"]
+                col2_value = st.selectbox("Select Data type", col2_options, key="col2_select")
+
+            submit_button = st.form_submit_button("Add sensor")
+        
+        if submit_button:
+            if col1_value:
+                st.session_state.data.append({"Sensor": col1_value, "DataType": col2_value})    
+
+        if st.session_state.data:
+            st.write("Table:")
+            df = pd.DataFrame(st.session_state.data)
+            delete_checkboxes = []
+            with st.form("table_form"):
+                for i, row in df.iterrows():
+                    col1, col2, col3 = st.columns([3, 3, 1]) 
+                    with col1:
+                        st.write(row["Sensor"])
+                    with col2:
+                        st.write(row["DataType"])
+                    with col3:
+                        delete_checkbox = st.checkbox("Delete", key=f"delete_{i}",label_visibility="collapsed")
+                        delete_checkboxes.append(delete_checkbox) 
+                
+                submit_delete = st.form_submit_button("Delete selected",type="primary")
+                
+                if submit_delete:
+                    st.session_state.data = [row for i, row in enumerate(st.session_state.data) if not delete_checkboxes[i]]
+                    st.success("Selected rows deleted successfully.")
+                    st.rerun()
+    st.text(f"Current columm: {current_columns}")
+    submit_new_column = st.button("Confirm new column",key="add_col_button")
+    if submit_new_column:
+        init_telegraft_str_col = "status"
+        df = pd.DataFrame(st.session_state.data)
+        filtered_df = df[df['DataType'] == 'varchar(25)']
+        telegraft_str_col = '"' + '","'.join(filtered_df['Sensor'].tolist()) + '"'
+        telegraft_str_col = f'"{init_telegraft_str_col}",{telegraft_str_col}'
+
+        new_column = ', '.join(df.apply(lambda row: ' '.join(row), axis=1))  
+        add_col_sql(st,os.environ["SERVER"],os.environ["USER_LOGIN"],os.environ["PASSWORD"],os.environ["DATABASE"],os.environ["TABLE_1"],new_column)
+        new_production_column = f"{old_columns},{new_column}"
+        new_production_column_name = ','.join(df['Sensor'].tolist())
+        new_production_column_name = f"{current_columns},{new_production_column_name}"
+        update_config_file1(telegraf_path, telegraft_str_col)
+
+        os.environ["PRODUCTION_TABLE_COLUMNS"] = str(new_production_column)
+        os.environ["PRODUCTION_COLUMN_NAMES"] = str(new_production_column_name)
+        dotenv.set_key(dotenv_file,"PRODUCTION_TABLE_COLUMNS",os.environ["PRODUCTION_TABLE_COLUMNS"])
+        dotenv.set_key(dotenv_file,"PRODUCTION_COLUMN_NAMES",os.environ["PRODUCTION_COLUMN_NAMES"])
+
+        restart_telegraf("telegraf")
+        st.success('Done!', icon="✅")
+        time.sleep(0.5)
+        st.rerun()
+
+def add_col_sql(st,server,user_login,password,database,table,new_col):
+        cnxn = pymssql.connect(server,user_login,password,database)
+        cursor = cnxn.cursor()
+        try:
+            cursor.execute(f'''ALTER TABLE {table} ADD {new_col}''')
+            cnxn.commit()
+            cursor.close()
+            st.success('ADD NEW COLUMN SUCCESSFULLY!', icon="✅")
+        except Exception as e:
+            st.error('Error'+str(e), icon="❌")
 
 def dataflow_production_influx():
         st.caption("INFLUXDB")
@@ -314,22 +402,23 @@ def config_db_connect(env_headers):
 
     st.markdown("---")
 
-def restart_telegraf():
+def restart_telegraf(container_name):
     try:
         result = subprocess.run(
-            ["docker", "restart", "telegraf"], 
+            ["docker", "restart", container_name], 
             capture_output=True, 
             text=True,
-            check=True
         )
-        st.success("Telegraf restarted successfully!")
+        if result.returncode == 0:
+            st.success(f"Successfully restarted {container_name}!")
+        else:
+            st.error(f"Failed to restart {container_name}: {result.stderr}")
+
     except subprocess.CalledProcessError as e:
         st.error(f"Failed to restart Telegraf: {e.stderr}")
 
 def config_sensor_registry_add():
-
     st.header("SENSOR REGISTRY")
-    
     if 'data' not in st.session_state:
         st.session_state.data = []
 
@@ -360,7 +449,7 @@ def config_sensor_registry_add():
                 with col2:
                     st.write(row["DataType"])
                 with col3:
-                    delete_checkbox = st.checkbox("Delete Ros", key=f"delete_{i}",label_visibility="collapsed")
+                    delete_checkbox = st.checkbox("Delete", key=f"delete_{i}",label_visibility="collapsed")
                     delete_checkboxes.append(delete_checkbox) 
             
             submit_delete = st.form_submit_button("Delete selected",type="primary")
@@ -385,11 +474,8 @@ def config_sensor_registry_add():
                 if st.session_state.data:
                     init_columns = os.environ["INIT_COLUMNS"]
                     df = pd.DataFrame(st.session_state.data)
-                    
                     init_telegraft_str_col = "status"
-
                     filtered_df = df[df['DataType'] == 'varchar(25)']
-
                     telegraft_str_col = '"' + '","'.join(filtered_df['Sensor'].tolist()) + '"'
                     telegraft_str_col = f'"{init_telegraft_str_col}",{telegraft_str_col}'
                     production_column = ', '.join(df.apply(lambda row: ' '.join(row), axis=1))
@@ -397,8 +483,6 @@ def config_sensor_registry_add():
                     production_column_name = ','.join(df['Sensor'].tolist())
                     update_config_file1(telegraf_path, telegraft_str_col)
                     
-                    
-
                     os.environ["PRODUCTION_TABLE_COLUMNS"] = str(production_column)
                     os.environ["PRODUCTION_COLUMN_NAMES"] = str(production_column_name)
                     dotenv.set_key(dotenv_file,"PRODUCTION_TABLE_COLUMNS",os.environ["PRODUCTION_TABLE_COLUMNS"])
@@ -413,13 +497,12 @@ def config_sensor_registry_add():
                     dotenv.set_key(dotenv_file,"INFLUX_PORT",os.environ["INFLUX_PORT"])
                     dotenv.set_key(dotenv_file,"INFLUX_SERVER",os.environ["INFLUX_SERVER"])
 
-                    restart_telegraf()
+                    restart_telegraf("telegraf")
                     st.success('Done!', icon="✅")
                     time.sleep(0.5)
-                    st.rerun()
+                st.rerun()
 
 def config_mqtt_add():
-
     st.header("MQTT TOPIC REGISTRY")
 
     with st.form("config_mqtt_add"):
@@ -623,8 +706,8 @@ def project_config():
                         if alarmlist_data:
                             os.environ["DIV"] = str(div_name_input.upper())
                             os.environ["PROCESS"] = str(project_name_input.upper())
-                            os.environ["TABLE_3"] = "DATA_ALARMLIS_"+str(project_name_input.upper())
-                            os.environ["TABLE_LOG_3"] = "LOG_ALARMLIS_"+str(project_name_input.upper())
+                            os.environ["TABLE_3"] = "DATA_ALARMLIST_"+str(project_name_input.upper())
+                            os.environ["TABLE_LOG_3"] = "LOG_ALARMLIST_"+str(project_name_input.upper())
                             os.environ["PROJECT_TYPE_3"] = "ALARMLIST"  
                         else:
                             os.environ["PROJECT_TYPE_3"] = ""
@@ -745,9 +828,56 @@ def dataflow_test3():
                 st.error("Error :"+str(e))
         st.markdown("---")
 
+def save_schedule_config(new_config):
+    with open(ofelia_path, 'w') as file:
+        file.write(new_config)
+
+def schedule_config(schedule_data):
+    new_config = f'''
+[job-run "MMS Data"]
+schedule = {schedule_data}
+container = mms_data
+command = python /app/main_data.py
+'''
+    save_schedule_config(new_config)
+
+def load_schedule_config(path):
+    schedule_dict = {
+        "@every 1m":"every 1 minute",
+        "@every 30m":"every 30 minute",
+        "0 * * * *":"every hourly"
+    }
+    if os.path.exists(path):
+        with open(path, 'r') as file:
+            lines = file.readlines()
+            for line in lines:
+                if 'schedule' in line:
+                    current_schedule  = line.split("=")[1].strip()
+                    current_schedule = schedule_dict.get(current_schedule)
+            return current_schedule
+    return ''
+
+def calculation_method():
+    st.caption("CALCULATION METHOD")
+    calculate_select = st.selectbox('Select calculate method',('every period time','every period time with accumulate data'),key='calculate_select')
+    calculate_dict = {
+        "every period time":"1",
+        "every period time with accumulate data":"2"
+            }
+    calculate_select_value = calculate_dict.get(calculate_select)
+    cal_button = st.button("SUBMIT",key='cal_button')
+
+    if cal_button:
+        os.environ['CALCULATE_FUNCTION'] = str(calculate_select_value)
+        dotenv.set_key(dotenv_file,"CALCULATE_FUNCTION",os.environ["CALCULATE_FUNCTION"])
+        st.success('CONFIEMED', icon="✅")
+        time.sleep(0.5)
+        st.rerun()
+    st.markdown("---")
+
 def main_layout():
     st.set_page_config(
-            page_title="MES System",
+            page_title="MES System 2.0.0",
             page_icon="💻",
             layout="wide",
             initial_sidebar_state="expanded",
@@ -758,7 +888,7 @@ def main_layout():
         text_input_container = st.empty()
         password = text_input_container.text_input("Input password", type="password")
 
-    if password == "1":
+    if password == str(os.environ["ST_PASSWORD_1"]):
         text_input_container.empty()
         tab1,tab2,tab3,tab4,tab5,tab6 = st.tabs(["⚙️ PROJECT CONFIG", "🔑 DB CONNECTION", "📂 DB CREATE", "🔍 DATAFLOW PREVIEW","📝LOG","🕞SCHEDULE"])
 
@@ -766,14 +896,16 @@ def main_layout():
             project_config()
             init_project = str(os.environ["INIT_PROJECT"])
             project_type_1 = os.environ["PROJECT_TYPE_1"]
+            init_db = str(os.environ["INIT_DB"])
+
             if init_project=="True":
                 config_mqtt_add()
                 config_mqtt_delete()
-                if project_type_1 == 'PRODUCTION':
+                if project_type_1 == 'PRODUCTION' and init_db == 'False':
                     config_sensor_registry_add()
+
             else:
                 st.error('NOT INITIAL A PROJECT YET', icon="❌")
-            # config_docker()
         with tab2:
             config_db_connect("SQLSERVER")
             config_db_connect("INFLUXDB")
@@ -794,18 +926,61 @@ def main_layout():
                 st.error('DB NOT INITIAL', icon="❌")    
         with tab6:
             st.header("SCHEDULE")
-            schedule_data = st.selectbox('Select Data Schedule',('Every 1 minute','Every 5 minute', 'Hourly'),key='schedule_data')
-            
-            schedule_data_button = st.button("SUBMIT",key='schedule_data_button')
-            
-            schedule_status = st.selectbox('Select Status Schedule',('Every 1 msg','Every 10 msgs', 'Every 50 msgs'),key='schedule_status')
-            schedule_status_button = st.button("SUBMIT",key='schedule_status_button')
+            a = load_schedule_config(ofelia_path)
+            b = os.environ["STATUS_SCHEDULE"]
+            c = os.environ["ALARM_SCHEDULE"]
 
-            schedule_alarm = st.selectbox('Select Alarm Schedule',('Every 1 msg','Every 10 msgs', 'Every 50 msgs'),key='schedule_alarm')
-            schedule_data_alarm = st.button("SUBMIT",key='schedule_data_alarm')
+            col1,col2 = st.columns(2)
+            with col1:
+                schedule_data = st.selectbox('Select Data Schedule',('every 1 minute','every 30 minute', 'every hourly'),key='schedule_data')
+                schedule_status = st.selectbox('Select Status Schedule',('Every 1 msg','Every 10 msgs', 'Every 50 msgs'),key='schedule_status')
+                schedule_alarm = st.selectbox('Select Alarm Schedule',('Every 1 msg','Every 10 msgs', 'Every 50 msgs'),key='schedule_alarm')
+            
+            with col2:
+                st.text("\n")
+                st.text("\n")  
+                st.text(f"Current Schedule:{a}")
+                st.text("\n")  
+                st.text("\n")  
+                st.text("\n")  
+                st.text(f"Current Schedule:{b}")
+                st.text("\n")  
+                st.text("\n")  
+                st.text("\n")  
+                st.text(f"Current Schedule:{c}")
+            schedule_dict1 = {
+                "every 1 minute":"@every 1m",
+                "every 30 minute":"@every 30m",
+                "every hourly":"0 * * * *"
+            }
 
-    elif password == "":
-        pass
+            schedule_dict2 = {
+                "Every 1 msg":1,
+                "Every 10 msgs":10,
+                "Every 50 msgs":50,
+            }
+            schedule_button = st.button("SUBMIT",key='schedule_data_button')
+
+            if schedule_button:
+                schedule_data_convert = schedule_dict1.get(schedule_data)
+                schedule_status_convert = schedule_dict2.get(schedule_status)
+                schedule_alarm_convert = schedule_dict2.get(schedule_alarm)
+                schedule_config(schedule_data_convert)
+
+                os.environ['STATUS_SCHEDULE'] = str(schedule_status_convert)
+                os.environ['ALARM_SCHEDULE'] = str(schedule_alarm_convert)
+                dotenv.set_key(dotenv_file,"STATUS_SCHEDULE",os.environ["STATUS_SCHEDULE"])
+                dotenv.set_key(dotenv_file,"ALARM_SCHEDULE",os.environ["ALARM_SCHEDULE"])
+                st.success('SCHEDULE CONFIEMED', icon="✅")
+                time.sleep(0.5)
+
+                st.rerun()
+            calculation_method()
+
+    elif password == str(os.environ["ST_PASSWORD_2"]):
+        text_input_container.empty()
+        add_column()
+
     else:
         st.toast('PASSWORD NOT CORRECT!', icon='❌')       
 

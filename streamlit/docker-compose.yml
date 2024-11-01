@@ -6,10 +6,33 @@ services:
       context: .  
     volumes:
       - ./telegraf.conf:/app/telegraf.conf
+      - ./config.ini:/app/config.ini
+      - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - '8501:8501' 
     depends_on:
       - influxdb
+      - telegraf
+
+  mms_data:
+    container_name: mms_data
+    build:
+      context: .
+      dockerfile: Dockerfile-data
+
+  mms_status:
+    container_name: mms_status
+    build:
+      context: .
+      dockerfile: Dockerfile-status
+    restart: always
+
+  mms_alarm:
+    container_name: mms_alarm
+    build:
+      context: .
+      dockerfile: Dockerfile-alarm
+    restart: always
 
   telegraf:
     image: telegraf
@@ -37,6 +60,17 @@ services:
       - '${INFLUX_PORT}:8086'
     volumes:
       - influxdb_data:/var/lib/influxdb
+
+  ofelia:
+    image: mcuadros/ofelia:latest
+    privileged: true
+    depends_on:
+      - mms_data
+    container_name: ofelia
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./config.ini:/etc/ofelia/config.ini
 
 volumes:
   influxdb_data: {}
