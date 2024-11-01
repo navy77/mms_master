@@ -20,6 +20,8 @@ table = os.getenv('TABLE_2')
 mqtt_broker = os.getenv('MQTT_BROKER')
 mqtt_port = int(os.getenv('MQTT_PORT'))
 mqtt_topic = "status/#"
+loop_time = int(os.getenv('STATUS_SCHEDULE'))
+
 
 data_queue = queue.Queue()
 
