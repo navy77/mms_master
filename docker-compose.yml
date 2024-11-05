@@ -12,7 +12,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./.env:/app/.env
     ports:
-      - '8501:8501' 
+      - '7771:8501' 
     depends_on:
       - influxdb_mms
       - telegraf_mms
@@ -64,7 +64,7 @@ services:
     volumes:
       - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
     depends_on:
-      - influxdb
+      - influxdb_mms
     ports:
       - '8125:8125'
 

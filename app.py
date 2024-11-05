@@ -168,7 +168,7 @@ def add_column():
         dotenv.set_key(dotenv_file,"PRODUCTION_TABLE_COLUMNS",os.environ["PRODUCTION_TABLE_COLUMNS"])
         dotenv.set_key(dotenv_file,"PRODUCTION_COLUMN_NAMES",os.environ["PRODUCTION_COLUMN_NAMES"])
 
-        restart_telegraf("telegraf")
+        restart_telegraf("telegraf_mms")
         st.success('Done!', icon="✅")
         time.sleep(0.5)
         st.rerun()
