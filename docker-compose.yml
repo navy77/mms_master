@@ -14,8 +14,8 @@ services:
     ports:
       - '8501:8501' 
     depends_on:
-      - influxdb
-      - telegraf
+      - influxdb_mms
+      - telegraf_mms
 
   mms_data:
     image: "mic/mms_data:2.0.0"
@@ -56,10 +56,10 @@ services:
     volumes:
       - ./.env:/app/.env
 
-  telegraf:
+  telegraf_mms:
     image: telegraf
     privileged: true
-    container_name: telegraf
+    container_name: telegraf_mms
     restart: always
     volumes:
       - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
@@ -68,9 +68,9 @@ services:
     ports:
       - '8125:8125'
 
-  influxdb:
+  influxdb_mms:
     image: influxdb:1.8-alpine
-    container_name: influxdb
+    container_name: influxdb_mms
     restart: always
     environment:
       - INFLUXDB_DB=influx
@@ -88,6 +88,8 @@ services:
     privileged: true
     depends_on:
       - mms_data
+      - mms_alarm
+      - mms_status
     container_name: ofelia
     restart: always
     volumes:
