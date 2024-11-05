@@ -5,10 +5,8 @@ import queue
 import time
 from datetime import datetime
 
-# Create a thread-safe queue for storing data temporarily
 data_queue = queue.Queue()
 
-# MQTT callback for when a message is received
 def on_message(client, userdata, message):
     payload = message.payload.decode()
     # Add timestamp to the message for logging purposes

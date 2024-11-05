@@ -1,13 +1,16 @@
 version: '3.8' 
 services:
   mms_app:
+    image: "mic/mms_app:2.0.0"
     container_name: streamlit
+    privileged: true
     build:
       context: .  
     volumes:
       - ./telegraf.conf:/app/telegraf.conf
       - ./config.ini:/app/config.ini
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./.env:/app/.env
     ports:
       - '8501:8501' 
     depends_on:
@@ -15,24 +18,43 @@ services:
       - telegraf
 
   mms_data:
+    image: "mic/mms_data:2.0.0"
     container_name: mms_data
+    privileged: true
     build:
       context: .
       dockerfile: Dockerfile-data
-
+    volumes:
+      - ./.env:/app/.env
+      
   mms_status:
+    image: "mic/mms_status:2.0.0"
     container_name: mms_status
+    privileged: true
     build:
       context: .
       dockerfile: Dockerfile-status
-    restart: always
+    volumes:
+      - ./.env:/app/.env
 
   mms_alarm:
+    image: "mic/mms_alarm:2.0.0"
     container_name: mms_alarm
+    privileged: true
     build:
       context: .
       dockerfile: Dockerfile-alarm
-    restart: always
+    volumes:
+      - ./.env:/app/.env
+
+  auto_drop:
+    container_name: auto_drop
+    privileged: true
+    build:
+      context: .
+      dockerfile: Dockerfile-autodrop
+    volumes:
+      - ./.env:/app/.env
 
   telegraf:
     image: telegraf

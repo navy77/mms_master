@@ -8,10 +8,10 @@ from influxdb import InfluxDBClient
 import dotenv
 import subprocess
 
-# telegraf_path = "/app/telegraf.conf"
-# ofelia_path = "/app/config.ini"
-ofelia_path = "./config.ini"
-telegraf_path = "./telegraf.conf"
+telegraf_path = "/app/telegraf.conf"
+ofelia_path = "/app/config.ini"
+# ofelia_path = "./config.ini"
+# telegraf_path = "./telegraf.conf"
 
 def update_config_file1(file_path, str_fields):
     with open(file_path, 'r') as file:
@@ -172,6 +172,7 @@ def add_column():
         st.success('Done!', icon="✅")
         time.sleep(0.5)
         st.rerun()
+    st.markdown("---")
 
 def add_col_sql(st,server,user_login,password,database,table,new_col):
         cnxn = pymssql.connect(server,user_login,password,database)
@@ -832,27 +833,40 @@ def save_schedule_config(new_config):
     with open(ofelia_path, 'w') as file:
         file.write(new_config)
 
-def schedule_config(schedule_data):
+def schedule_config(schedule_data,schedule_status,schedule_alarm):
     new_config = f'''
 [job-run "MMS Data"]
 schedule = {schedule_data}
 container = mms_data
 command = python /app/main_data.py
+
+[job-run "MMS Status"]
+schedule = {schedule_status}
+container = mms_status
+command = python /app/main_status.py
+
+[job-run "MMS Alarm"]
+schedule = {schedule_alarm}
+container = mms_alarm
+command = python /app/main_alarm.py
 '''
     save_schedule_config(new_config)
 
-def load_schedule_config(path):
+def load_schedule_config(path,line_no):
     schedule_dict = {
         "@every 1m":"every 1 minute",
+        "@every 5m":"every 5 minute",
+        "@every 10m":"every 10 minute",
         "@every 30m":"every 30 minute",
         "0 * * * *":"every hourly"
     }
+
     if os.path.exists(path):
         with open(path, 'r') as file:
             lines = file.readlines()
             for line in lines:
                 if 'schedule' in line:
-                    current_schedule  = line.split("=")[1].strip()
+                    current_schedule = lines[line_no].split("=")[1].strip()
                     current_schedule = schedule_dict.get(current_schedule)
             return current_schedule
     return ''
@@ -926,15 +940,15 @@ def main_layout():
                 st.error('DB NOT INITIAL', icon="❌")    
         with tab6:
             st.header("SCHEDULE")
-            a = load_schedule_config(ofelia_path)
-            b = os.environ["STATUS_SCHEDULE"]
-            c = os.environ["ALARM_SCHEDULE"]
+            a = load_schedule_config(ofelia_path,2)
+            b = load_schedule_config(ofelia_path,7)
+            c = load_schedule_config(ofelia_path,12)
 
             col1,col2 = st.columns(2)
             with col1:
-                schedule_data = st.selectbox('Select Data Schedule',('every 1 minute','every 30 minute', 'every hourly'),key='schedule_data')
-                schedule_status = st.selectbox('Select Status Schedule',('Every 1 msg','Every 10 msgs', 'Every 50 msgs'),key='schedule_status')
-                schedule_alarm = st.selectbox('Select Alarm Schedule',('Every 1 msg','Every 10 msgs', 'Every 50 msgs'),key='schedule_alarm')
+                schedule_data = st.selectbox('Select Data Schedule',('every 1 minute','every 5 minute','every 10 minute','every 30 minute', 'every hourly'),key='schedule_data')
+                schedule_status = st.selectbox('Select Status Schedule',('every 1 minute','every 5 minute','every 10 minute','every 30 minute', 'every hourly'),key='schedule_status')
+                schedule_alarm = st.selectbox('Select Alarm Schedule',('every 1 minute','every 5 minute','every 10 minute','every 30 minute', 'every hourly'),key='schedule_alarm')
             
             with col2:
                 st.text("\n")
@@ -950,27 +964,25 @@ def main_layout():
                 st.text(f"Current Schedule:{c}")
             schedule_dict1 = {
                 "every 1 minute":"@every 1m",
+                "every 5 minute":"@every 5m",
+                "every 10 minute":"@every 10m",
                 "every 30 minute":"@every 30m",
                 "every hourly":"0 * * * *"
             }
 
-            schedule_dict2 = {
-                "Every 1 msg":1,
-                "Every 10 msgs":10,
-                "Every 50 msgs":50,
-            }
+
             schedule_button = st.button("SUBMIT",key='schedule_data_button')
 
             if schedule_button:
                 schedule_data_convert = schedule_dict1.get(schedule_data)
-                schedule_status_convert = schedule_dict2.get(schedule_status)
-                schedule_alarm_convert = schedule_dict2.get(schedule_alarm)
-                schedule_config(schedule_data_convert)
+                schedule_status_convert = schedule_dict1.get(schedule_status)
+                schedule_alarm_convert = schedule_dict1.get(schedule_alarm)
+                schedule_config(schedule_data_convert,schedule_status_convert,schedule_alarm_convert)
 
-                os.environ['STATUS_SCHEDULE'] = str(schedule_status_convert)
-                os.environ['ALARM_SCHEDULE'] = str(schedule_alarm_convert)
-                dotenv.set_key(dotenv_file,"STATUS_SCHEDULE",os.environ["STATUS_SCHEDULE"])
-                dotenv.set_key(dotenv_file,"ALARM_SCHEDULE",os.environ["ALARM_SCHEDULE"])
+                # os.environ['STATUS_SCHEDULE'] = str(schedule_status_convert)
+                # os.environ['ALARM_SCHEDULE'] = str(schedule_alarm_convert)
+                # dotenv.set_key(dotenv_file,"STATUS_SCHEDULE",os.environ["STATUS_SCHEDULE"])
+                # dotenv.set_key(dotenv_file,"ALARM_SCHEDULE",os.environ["ALARM_SCHEDULE"])
                 st.success('SCHEDULE CONFIEMED', icon="✅")
                 time.sleep(0.5)
 
