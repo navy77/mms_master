@@ -21,6 +21,7 @@ RUN apt-get update \
   && apt-get -y install g++ \
   && apt-get -y install unixodbc unixodbc-dev \
   && apt-get clean 
+
 # Edit OpenSSL configuration to enable TLS 1.0
 RUN sed -i 's/^\(MinProtocol =\).*/\1 TLSv1.0/' /etc/ssl/openssl.cnf
 
@@ -28,5 +29,5 @@ COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 
 COPY . .
-RUN apt install nano
+
 CMD ["python", "main_status.py"]

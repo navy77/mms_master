@@ -161,8 +161,9 @@ def add_column():
         new_production_column = f"{old_columns},{new_column}"
         new_production_column_name = ','.join(df['Sensor'].tolist())
         new_production_column_name = f"{current_columns},{new_production_column_name}"
-        update_config_file1(telegraf_path, telegraft_str_col)
 
+        update_config_file1(telegraf_path, telegraft_str_col)
+        
         os.environ["PRODUCTION_TABLE_COLUMNS"] = str(new_production_column)
         os.environ["PRODUCTION_COLUMN_NAMES"] = str(new_production_column_name)
         dotenv.set_key(dotenv_file,"PRODUCTION_TABLE_COLUMNS",os.environ["PRODUCTION_TABLE_COLUMNS"])
@@ -498,7 +499,9 @@ def config_sensor_registry_add():
                     dotenv.set_key(dotenv_file,"INFLUX_PORT",os.environ["INFLUX_PORT"])
                     dotenv.set_key(dotenv_file,"INFLUX_SERVER",os.environ["INFLUX_SERVER"])
 
-                    restart_telegraf("telegraf")
+                    update_config_file2(telegraf_path,mqtt_ip)
+                    time.sleep(0.5)
+                    restart_telegraf("telegraf_mms")
                     st.success('Done!', icon="✅")
                     time.sleep(0.5)
                 st.rerun()

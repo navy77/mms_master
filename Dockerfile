@@ -30,11 +30,11 @@ RUN pip3 install -r requirements.txt
 RUN apt-get update && \
     apt-get install -y docker.io curl && \
     rm -rf /var/lib/apt/lists/*
-    
+
 COPY . .
 
 EXPOSE 8501
 
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
-RUN apt install nano
+
 CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]

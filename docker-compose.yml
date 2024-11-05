@@ -88,8 +88,8 @@ services:
     privileged: true
     depends_on:
       - mms_data
-      - mms_alarm
-      - mms_status
+      # - mms_alarm
+      # - mms_status
     container_name: ofelia
     restart: always
     volumes:
