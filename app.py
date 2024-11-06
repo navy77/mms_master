@@ -169,7 +169,7 @@ def add_column():
         dotenv.set_key(dotenv_file,"PRODUCTION_TABLE_COLUMNS",os.environ["PRODUCTION_TABLE_COLUMNS"])
         dotenv.set_key(dotenv_file,"PRODUCTION_COLUMN_NAMES",os.environ["PRODUCTION_COLUMN_NAMES"])
 
-        restart_telegraf("telegraf_mms")
+        restart_container("telegraf_mms")
         st.success('Done!', icon="✅")
         time.sleep(0.5)
         st.rerun()
@@ -404,7 +404,7 @@ def config_db_connect(env_headers):
 
     st.markdown("---")
 
-def restart_telegraf(container_name):
+def restart_container(container_name):
     try:
         result = subprocess.run(
             ["docker", "restart", container_name], 
@@ -501,7 +501,7 @@ def config_sensor_registry_add():
 
                     update_config_file2(telegraf_path,mqtt_ip)
                     time.sleep(0.5)
-                    restart_telegraf("telegraf_mms")
+                    restart_container("telegraf_mms")
                     st.success('Done!', icon="✅")
                     time.sleep(0.5)
                 st.rerun()
@@ -973,7 +973,6 @@ def main_layout():
                 "every hourly":"0 * * * *"
             }
 
-
             schedule_button = st.button("SUBMIT",key='schedule_data_button')
 
             if schedule_button:
@@ -982,13 +981,9 @@ def main_layout():
                 schedule_alarm_convert = schedule_dict1.get(schedule_alarm)
                 schedule_config(schedule_data_convert,schedule_status_convert,schedule_alarm_convert)
 
-                # os.environ['STATUS_SCHEDULE'] = str(schedule_status_convert)
-                # os.environ['ALARM_SCHEDULE'] = str(schedule_alarm_convert)
-                # dotenv.set_key(dotenv_file,"STATUS_SCHEDULE",os.environ["STATUS_SCHEDULE"])
-                # dotenv.set_key(dotenv_file,"ALARM_SCHEDULE",os.environ["ALARM_SCHEDULE"])
                 st.success('SCHEDULE CONFIEMED', icon="✅")
                 time.sleep(0.5)
-
+                restart_container("ofelia")
                 st.rerun()
             calculation_method()
 
