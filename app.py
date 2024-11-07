@@ -502,6 +502,7 @@ def config_sensor_registry_add():
                     update_config_file2(telegraf_path,mqtt_ip)
                     time.sleep(0.5)
                     restart_container("telegraf_mms")
+                    restart_container("influxdb_mms")
                     st.success('Done!', icon="✅")
                     time.sleep(0.5)
                 st.rerun()
