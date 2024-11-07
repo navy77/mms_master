@@ -862,7 +862,7 @@ def load_schedule_config(path,line_no):
         "@every 5m":"every 5 minute",
         "@every 10m":"every 10 minute",
         "@every 30m":"every 30 minute",
-        "0 * * * *":"every hourly"
+        "@hourly":"every hourly"
     }
 
     if os.path.exists(path):
@@ -971,7 +971,7 @@ def main_layout():
                 "every 5 minute":"@every 5m",
                 "every 10 minute":"@every 10m",
                 "every 30 minute":"@every 30m",
-                "every hourly":"0 * * * *"
+                "every hourly":"@hourly"
             }
 
             schedule_button = st.button("SUBMIT",key='schedule_data_button')
