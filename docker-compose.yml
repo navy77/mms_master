@@ -28,7 +28,7 @@ services:
       - ./.env:/app/.env
       
   mms_status_alarm:
-    image: "mic/mms_status:2.0.0"
+    image: "mic/mms_status_alarm:2.0.0"
     container_name: mms_status_alarm
     privileged: true
     build:
@@ -108,4 +108,9 @@ services:
       - ./config.ini:/etc/ofelia/config.ini
 
 volumes:
-  influxdb_data: {}
+  influxdb_data:
+    driver_opts:
+      type: none
+      device: /home/influxdb_data
+      o: bind
+

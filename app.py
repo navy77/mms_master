@@ -8,10 +8,10 @@ from influxdb import InfluxDBClient
 import dotenv
 import subprocess
 
-telegraf_path = "/app/telegraf.conf"
-ofelia_path = "/app/config.ini"
-# ofelia_path = "./config.ini"
-# telegraf_path = "./telegraf.conf"
+# telegraf_path = "/app/telegraf.conf"
+# ofelia_path = "/app/config.ini"
+ofelia_path = "./config.ini"
+telegraf_path = "./telegraf.conf"
 
 def update_config_file1(file_path, str_fields):
     with open(file_path, 'r') as file:
@@ -861,11 +861,12 @@ schedule = {schedule_data}
 container = mms_data
 command = python /app/main_data.py
 
-[job-run "MMS Status"]
+[job-run "MMS Status-Alarm"]
 schedule = {schedule_status_alarm}
 container = mms_status_alarm
 command = python /app/main_status_alarm.py
 '''
+    print(new_config)
     save_schedule_config(new_config)
 
 def load_schedule_config(path,line_no):
@@ -990,7 +991,9 @@ def main_layout():
 
             if schedule_button:
                 schedule_data_convert = schedule_dict1.get(schedule_data)
-                schedule_data_convert = schedule_dict1.get(schedule_status_alarm)
+                schedule_status_alarm = schedule_dict1.get(schedule_status_alarm)
+                print(schedule_data)
+                print(schedule_status_alarm)
                 # schedule_status_convert = schedule_dict1.get(schedule_status)
                 # schedule_alarm_convert = schedule_dict1.get(schedule_alarm)
                 schedule_config(schedule_data_convert,schedule_status_alarm)
