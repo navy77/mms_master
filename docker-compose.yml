@@ -27,25 +27,35 @@ services:
     volumes:
       - ./.env:/app/.env
       
-  mms_status:
+  mms_status_alarm:
     image: "mic/mms_status:2.0.0"
-    container_name: mms_status
+    container_name: mms_status_alarm
     privileged: true
     build:
       context: .
-      dockerfile: Dockerfile-status
+      dockerfile: Dockerfile-status-alarm
     volumes:
       - ./.env:/app/.env
 
-  mms_alarm:
-    image: "mic/mms_alarm:2.0.0"
-    container_name: mms_alarm
-    privileged: true
-    build:
-      context: .
-      dockerfile: Dockerfile-alarm
-    volumes:
-      - ./.env:/app/.env
+  # mms_status:
+  #   image: "mic/mms_status:2.0.0"
+  #   container_name: mms_status
+  #   privileged: true
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile-status
+  #   volumes:
+  #     - ./.env:/app/.env
+
+  # mms_alarm:
+  #   image: "mic/mms_alarm:2.0.0"
+  #   container_name: mms_alarm
+  #   privileged: true
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile-alarm
+  #   volumes:
+  #     - ./.env:/app/.env
 
   auto_drop:
     container_name: auto_drop
@@ -81,7 +91,7 @@ services:
     ports:
       - '${INFLUX_PORT}:8086'
     volumes:
-      - influxdb_data:/var/lib/influxdb
+      - /home/influxdb_data:/var/lib/influxdb
 
   ofelia:
     image: mcuadros/ofelia:latest
