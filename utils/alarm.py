@@ -8,6 +8,7 @@ from influxdb import InfluxDBClient
 import time
 import dotenv
 
+
 class PREPARE:
 
     def __init__(self,server,database,user_login,password,table,table_columns,table_log,table_columns_log,
@@ -102,6 +103,7 @@ class MC_ALARM(PREPARE):
 
     def query_influx(self) :
         try:
+            print(555)
             result_lists = []
             client = InfluxDBClient(self.influx_server, self.influx_port, self.influx_user_login,self.influx_password, self.influx_database)
             mqtt_topic_value = list(str(self.mqtt_topic).split(","))
@@ -112,10 +114,9 @@ class MC_ALARM(PREPARE):
                 result_lists.append(result_df)
             query_influx = pd.concat(result_lists, ignore_index=True)
 
-            dotenv_file = dotenv.find_dotenv()
-            dotenv.load_dotenv(dotenv_file,override=True)
+            dotenv.load_dotenv('../.env',override=True)
             last_event = str(os.environ["ALARM_TIME"])
-
+            
             if not query_influx.empty :
                 if last_event !='':
                     new_query_influx = query_influx[query_influx.time > last_event]
@@ -125,7 +126,7 @@ class MC_ALARM(PREPARE):
                     self.df_influx = query_influx
                     newest_time = query_influx.head(1)['time'].values[0]
 
-                dotenv_file = dotenv.find_dotenv()
+                dotenv_file = dotenv.find_dotenv('../.env')
                 dotenv.set_key(dotenv_file, "ALARM_TIME", str(newest_time))
 
             else:
@@ -189,10 +190,11 @@ class MC_ALARM(PREPARE):
             self.query_influx()
             if self.df_influx is not None:
                 self.edit_col()
+                print(self.df_insert)
                 self.df_to_db()
                 self.ok_msg(self.df_to_db.__name__)
         else:
             print("db is not initial yet")
 
-if __name__ == "__main__":    
-    print("must be run with main")
+# if __name__ == "__main__":    
+#     print("must be run with main")

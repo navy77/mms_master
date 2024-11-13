@@ -1,17 +1,12 @@
 import os
-
 from dotenv import load_dotenv
-load_dotenv()
-import dotenv
 from utils.alarm import MC_ALARM
 from utils.mc_status import MC_STATUS
-project_2 = os.environ["PROJECT_TYPE_2"]
-project_3 = os.environ["PROJECT_TYPE_3"]
-try:
-    dotenv_file = dotenv.find_dotenv()
-    dotenv.load_dotenv(dotenv_file,override=True)
 
-    if project_2 == "MCSTATUS":
+load_dotenv()
+
+def run_mc_status():
+    try:
         mc_status_to_sqlserver = MC_STATUS(
             server=os.getenv('SERVER'),
             database=os.getenv('DATABASE'),
@@ -28,10 +23,14 @@ try:
             influx_port=int(os.getenv('INFLUX_PORT')),
             column_names=os.getenv('MCSTATUS_TABLE_COLUMNS'),
             mqtt_topic=os.getenv('MQTT_TOPIC_2'),
-            initial_db=os.getenv('INIT_DB'))
+            initial_db=os.getenv('INIT_DB')
+        )
         mc_status_to_sqlserver.run()
+    except Exception as e:
+        print("Error in MC_STATUS:", e)
 
-    if project_3 == "ALARMLIST":
+def run_mc_alarm():
+    try:
         mc_alarm_to_sqlserver = MC_ALARM(
             server=os.getenv('SERVER'),
             database=os.getenv('DATABASE'),
@@ -48,9 +47,17 @@ try:
             influx_port=int(os.getenv('INFLUX_PORT')),
             column_names=os.getenv('ALARMLIST_TABLE_COLUMNS'),
             mqtt_topic=os.getenv('MQTT_TOPIC_3'),
-            initial_db=os.getenv('INIT_DB'))
+            initial_db=os.getenv('INIT_DB')
+        )
         mc_alarm_to_sqlserver.run()
+    except Exception as e:
+        print("Error in MC_ALARM:", e)
 
-except Exception as e:
-    print(e)
-    
+project_2 = os.getenv("PROJECT_TYPE_2", "").strip()
+project_3 = os.getenv("PROJECT_TYPE_3", "").strip()
+
+if project_2 == "MCSTATUS":
+    run_mc_status()
+
+if project_3 == "ALARMLIST":
+    run_mc_alarm()

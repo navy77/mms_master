@@ -112,11 +112,10 @@ class MC_STATUS(PREPARE):
                 result_lists.append(result_df)
             query_influx = pd.concat(result_lists, ignore_index=True)
 
-            dotenv_file = dotenv.find_dotenv()
-            dotenv.load_dotenv(dotenv_file,override=True)
+            dotenv.load_dotenv('../.env',override=True)
             last_event = str(os.environ["MC_STATUS_TIME"])
-
             if not query_influx.empty :
+                
                 if last_event !='':
                     new_query_influx = query_influx[query_influx.time > last_event]
                     self.df_influx = new_query_influx
@@ -124,8 +123,8 @@ class MC_STATUS(PREPARE):
                 else:
                     self.df_influx = query_influx
                     newest_time = query_influx.head(1)['time'].values[0]
-
-                dotenv_file = dotenv.find_dotenv()
+                
+                dotenv_file = dotenv.find_dotenv('../.env')
                 dotenv.set_key(dotenv_file, "MC_STATUS_TIME", str(newest_time))
 
             else:
@@ -136,20 +135,21 @@ class MC_STATUS(PREPARE):
             self.error_msg(self.query_influx.__name__,"cannot query influxdb",e)
       
     def edit_col(self):
-            try:
-                df = self.df_influx.copy()
-                df_split = df['topic'].str.split('/', expand=True)
-                df['mc_no'] = df_split[3].values
-                df['process'] = df_split[2].values
-                df.drop(columns=['topic'],inplace=True)
-                df.rename(columns = {'time':'occurred'}, inplace = True)
-                df["occurred"] =   pd.to_datetime(df["occurred"]).dt.tz_convert(None)
-                df["occurred"] = df["occurred"] + pd.DateOffset(hours=7)    
-                df["occurred"] = df['occurred'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S'))
-                df.rename(columns={'status': 'mc_status'}, inplace=True)
-                self.df_insert = df
-            except Exception as e:
-                self.error_msg(self.edit_col.__name__,"cannot edit dataframe data",e)
+        try:
+            df = self.df_influx.copy()
+            df_split = df['topic'].str.split('/', expand=True)
+            df['mc_no'] = df_split[3].values
+            df['process'] = df_split[2].values
+            df.drop(columns=['topic'],inplace=True)
+            df.rename(columns = {'time':'occurred'}, inplace = True)
+            df["occurred"] =   pd.to_datetime(df["occurred"]).dt.tz_convert(None)
+            df["occurred"] = df["occurred"] + pd.DateOffset(hours=7)    
+            df["occurred"] = df['occurred'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S'))
+            df.rename(columns={'status': 'mc_status'}, inplace=True)
+            self.df_insert = df
+ 
+        except Exception as e:
+            self.error_msg(self.edit_col.__name__,"cannot edit dataframe data",e)
 
     def df_to_db(self):
             #connect to db
@@ -189,10 +189,11 @@ class MC_STATUS(PREPARE):
             self.query_influx()
             if self.df_influx is not None:
                 self.edit_col()
+                print(self.df_insert)
                 self.df_to_db()
                 self.ok_msg(self.df_to_db.__name__)
         else:
             print("db is not initial yet")
 
-if __name__ == "__main__":    
-    print("must be run with main")
+# if __name__ == "__main__":    
+#     print("must be run with main")
