@@ -8,10 +8,10 @@ from influxdb import InfluxDBClient
 import dotenv
 import subprocess
 
-# telegraf_path = "/app/telegraf.conf"
-# ofelia_path = "/app/config.ini"
-ofelia_path = "./config.ini"
-telegraf_path = "./telegraf.conf"
+telegraf_path = "/app/telegraf.conf"
+ofelia_path = "/app/config.ini"
+# ofelia_path = "./config.ini"
+# telegraf_path = "./telegraf.conf"
 
 def update_config_file1(file_path, str_fields):
     with open(file_path, 'r') as file:
@@ -490,12 +490,11 @@ def config_sensor_registry_add():
                     dotenv.set_key(dotenv_file,"PRODUCTION_TABLE_COLUMNS",os.environ["PRODUCTION_TABLE_COLUMNS"])
                     dotenv.set_key(dotenv_file,"PRODUCTION_COLUMN_NAMES",os.environ["PRODUCTION_COLUMN_NAMES"])
 
-
-                    os.environ['SERVER'] = str(mqtt_ip)
+                    os.environ['MQTT_BROKER'] = str(mqtt_ip)
                     os.environ['INFLUX_PORT'] = str(influx_port)
                     os.environ['INFLUX_SERVER'] = str(influx_ip)
 
-                    dotenv.set_key(dotenv_file,"SERVER",os.environ["SERVER"])
+                    dotenv.set_key(dotenv_file,"MQTT_BROKER",os.environ["MQTT_BROKER"])
                     dotenv.set_key(dotenv_file,"INFLUX_PORT",os.environ["INFLUX_PORT"])
                     dotenv.set_key(dotenv_file,"INFLUX_SERVER",os.environ["INFLUX_SERVER"])
 
