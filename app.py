@@ -8,10 +8,10 @@ from influxdb import InfluxDBClient
 import dotenv
 import subprocess
 
-# telegraf_path = "/app/telegraf.conf"
-# ofelia_path = "/app/config.ini"
-ofelia_path = "./config.ini"
-telegraf_path = "./telegraf.conf"
+telegraf_path = "/app/telegraf.conf"
+ofelia_path = "/app/config.ini"
+# ofelia_path = "./config.ini"
+# telegraf_path = "./telegraf.conf"
 
 def update_config_file1(file_path, str_fields):
     with open(file_path, 'r') as file:
