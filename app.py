@@ -964,9 +964,10 @@ def main_layout():
             col1,col2 = st.columns(2)
             with col1:
                 schedule_data = st.selectbox('Select Data Schedule',('every 1 minute','every 5 minute','every 10 minute','every 30 minute', 'every hourly'),key='schedule_data')
+                schedule_status_alarm = st.selectbox('Select Status/Alarm Schedule',('every 1 minute','every 5 minute','every 10 minute','every 30 minute', 'every hourly'),key='schedule_status_alarm')
                 # schedule_status = st.selectbox('Select Status Schedule',('every 1 minute','every 5 minute','every 10 minute','every 30 minute', 'every hourly'),key='schedule_status')
                 # schedule_alarm = st.selectbox('Select Alarm Schedule',('every 1 minute','every 5 minute','every 10 minute','every 30 minute', 'every hourly'),key='schedule_alarm')
-                schedule_status_alarm = st.selectbox('Select Status/Alarm Schedule',('every 1 minute','every 5 minute','every 10 minute','every 30 minute', 'every hourly'),key='schedule_status_alarm')
+
             with col2:
                 st.text("\n")
                 st.text("\n")  
@@ -992,8 +993,6 @@ def main_layout():
             if schedule_button:
                 schedule_data_convert = schedule_dict1.get(schedule_data)
                 schedule_status_alarm = schedule_dict1.get(schedule_status_alarm)
-                print(schedule_data)
-                print(schedule_status_alarm)
                 # schedule_status_convert = schedule_dict1.get(schedule_status)
                 # schedule_alarm_convert = schedule_dict1.get(schedule_alarm)
                 schedule_config(schedule_data_convert,schedule_status_alarm)
