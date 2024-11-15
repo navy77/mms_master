@@ -103,7 +103,6 @@ class MC_ALARM(PREPARE):
 
     def query_influx(self) :
         try:
-            print(555)
             result_lists = []
             client = InfluxDBClient(self.influx_server, self.influx_port, self.influx_user_login,self.influx_password, self.influx_database)
             mqtt_topic_value = list(str(self.mqtt_topic).split(","))
@@ -190,11 +189,10 @@ class MC_ALARM(PREPARE):
             self.query_influx()
             if self.df_influx is not None:
                 self.edit_col()
-                print(self.df_insert)
                 self.df_to_db()
                 self.ok_msg(self.df_to_db.__name__)
         else:
             print("db is not initial yet")
 
-# if __name__ == "__main__":    
-#     print("must be run with main")
+if __name__ == "__main__":    
+    print("must be run with main")

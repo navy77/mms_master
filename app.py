@@ -147,6 +147,7 @@ def add_column():
                     st.session_state.data = [row for i, row in enumerate(st.session_state.data) if not delete_checkboxes[i]]
                     st.success("Selected rows deleted successfully.")
                     st.rerun()
+                    
     st.text(f"Current columm: {current_columns}")
     submit_new_column = st.button("Confirm new column",key="add_col_button")
     if submit_new_column:
@@ -836,36 +837,23 @@ def save_schedule_config(new_config):
     with open(ofelia_path, 'w') as file:
         file.write(new_config)
 
-def schedule_config(schedule_data,schedule_status_alarm):
-# def schedule_config(schedule_data,schedule_status,schedule_alarm):
-#     new_config = f'''
-# [job-run "MMS Data"]
-# schedule = {schedule_data}
-# container = mms_data
-# command = python /app/main_data.py
-
-# [job-run "MMS Status"]
-# schedule = {schedule_status}
-# container = mms_status
-# command = python /app/main_status.py
-
-# [job-run "MMS Alarm"]
-# schedule = {schedule_alarm}
-# container = mms_alarm
-# command = python /app/main_alarm.py
-# '''
+def schedule_config(schedule_data,schedule_status,schedule_alarm):
     new_config = f'''
 [job-run "MMS Data"]
 schedule = {schedule_data}
 container = mms_data
 command = python /app/main_data.py
 
-[job-run "MMS Status-Alarm"]
-schedule = {schedule_status_alarm}
-container = mms_status_alarm
-command = python /app/main_status_alarm.py
+[job-run "MMS Status"]
+schedule = {schedule_status}
+container = mms_status
+command = python /app/main_status.py
+
+[job-run "MMS Alarm"]
+schedule = {schedule_alarm}
+container = mms_alarm
+command = python /app/main_alarm.py
 '''
-    print(new_config)
     save_schedule_config(new_config)
 
 def load_schedule_config(path,line_no):
@@ -958,15 +946,14 @@ def main_layout():
             st.header("SCHEDULE")
             a = load_schedule_config(ofelia_path,2)
             b = load_schedule_config(ofelia_path,7)
-            # c = load_schedule_config(ofelia_path,12)
+            c = load_schedule_config(ofelia_path,12)
 
             col1,col2 = st.columns(2)
             with col1:
                 schedule_data = st.selectbox('Select Data Schedule',('every 1 minute','every 5 minute','every 10 minute','every 30 minute', 'every hourly'),key='schedule_data')
-                schedule_status_alarm = st.selectbox('Select Status/Alarm Schedule',('every 1 minute','every 5 minute','every 10 minute','every 30 minute', 'every hourly'),key='schedule_status_alarm')
-                # schedule_status = st.selectbox('Select Status Schedule',('every 1 minute','every 5 minute','every 10 minute','every 30 minute', 'every hourly'),key='schedule_status')
-                # schedule_alarm = st.selectbox('Select Alarm Schedule',('every 1 minute','every 5 minute','every 10 minute','every 30 minute', 'every hourly'),key='schedule_alarm')
-
+                schedule_status = st.selectbox('Select Status Schedule',('every 1 minute','every 5 minute','every 10 minute','every 30 minute', 'every hourly'),key='schedule_status')
+                schedule_alarm = st.selectbox('Select Alarm Schedule',('every 1 minute','every 5 minute','every 10 minute','every 30 minute', 'every hourly'),key='schedule_alarm')
+                # schedule_status_alarm = st.selectbox('Select Status/Alarm Schedule',('every 1 minute','every 5 minute','every 10 minute','every 30 minute', 'every hourly'),key='schedule_status_alarm')
             with col2:
                 st.text("\n")
                 st.text("\n")  
@@ -975,10 +962,11 @@ def main_layout():
                 st.text("\n")  
                 st.text("\n")  
                 st.text(f"Current Schedule:{b}")
-                # st.text("\n")  
-                # st.text("\n")  
-                # st.text("\n")  
-                # st.text(f"Current Schedule:{c}")
+                st.text("\n")  
+                st.text("\n")  
+                st.text("\n")  
+                st.text(f"Current Schedule:{c}")
+
             schedule_dict1 = {
                 "every 1 minute":"@every 1m",
                 "every 5 minute":"@every 5m",
@@ -991,10 +979,9 @@ def main_layout():
 
             if schedule_button:
                 schedule_data_convert = schedule_dict1.get(schedule_data)
-                schedule_status_alarm = schedule_dict1.get(schedule_status_alarm)
-                # schedule_status_convert = schedule_dict1.get(schedule_status)
-                # schedule_alarm_convert = schedule_dict1.get(schedule_alarm)
-                schedule_config(schedule_data_convert,schedule_status_alarm)
+                schedule_status_convert = schedule_dict1.get(schedule_status)
+                schedule_alarm_convert = schedule_dict1.get(schedule_alarm)
+                schedule_config(schedule_data_convert,schedule_status_convert,schedule_alarm_convert)
 
                 st.success('SCHEDULE CONFIEMED', icon="✅")
                 time.sleep(0.5)

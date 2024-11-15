@@ -13,7 +13,7 @@ class PREPARE:
     def __init__(self,server,database,user_login,password,table,table_columns,table_log,table_columns_log,
                  influx_server,influx_database,influx_user_login,influx_password,influx_port,
                  column_names,mqtt_topic,initial_db):
-        
+                 
         self.server = server
         self.database = database
         self.user_login = user_login
@@ -91,7 +91,7 @@ class PREPARE:
         except Exception as e:
             self.info_msg(self.log_to_db.__name__,e)
             sys.exit()
- 
+
 class MC_STATUS(PREPARE):
     def __init__(self,server,database,user_login,password,table,table_columns,table_log,table_columns_log,
                  influx_server,influx_database,influx_user_login,influx_password,influx_port,
@@ -195,5 +195,5 @@ class MC_STATUS(PREPARE):
         else:
             print("db is not initial yet")
 
-# if __name__ == "__main__":    
-#     print("must be run with main")
+if __name__ == "__main__":    
+    print("must be run with main")
