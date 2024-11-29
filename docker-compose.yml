@@ -26,17 +26,7 @@ services:
       dockerfile: Dockerfile-data
     volumes:
       - ./.env:/app/.env
-      
-  # mms_status_alarm:
-  #   image: "mic/mms_status_alarm:2.0.0"
-  #   container_name: mms_status_alarm
-  #   privileged: true
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile-status-alarm
-  #   volumes:
-  #     - ./.env:/app/.env
-
+    
   mms_status:
     image: "mic/mms_status:2.0.0"
     container_name: mms_status
