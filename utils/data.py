@@ -5,7 +5,6 @@ import sys
 import pymssql
 import json
 import datetime
-# from datetime import datetime,date, timedelta
 from sqlalchemy import create_engine,text,engine
 from influxdb import InfluxDBClient
 import time
@@ -123,50 +122,29 @@ class DATA(PREPARE):
       
     def calculate2(self) :
         try:
-            # columns_to_sum = ['ball_c1_ok','ball_c2_ok','ball_c3_ok','ball_c4_ok','ball_c5_ok','ball_c1_ng','ball_c2_ng','ball_c3_ng','ball_c4_ng','ball_c5_ng']
-            # columns_not_sum = ['time', 'topic', 'd_str1', 'd_str2','rssi','ball_c1_remain','ball_c2_remain','ball_c3_remain','ball_c4_remain','ball_c5_remain',
-            #                    'ball_gauge_c1','ball_gauge_c2','ball_gauge_c3','ball_gauge_c4','ball_gauge_c5','rtnr_ok','rtnr_ng','ball_sepa_ng','ball_shot_ng',
-            #                    'production_daily_ok','production_daily_ng','average_cycle_time','ball_use_brg']
-            columns_to_sum = ['daily_ok','daily_ng','daily_tt','c1_ok','c2_ok','c3_ok','c4_ok','c5_ok','c1_ng','c2_ng','c3_ng','c4_ng','c5_ng',
-                              'cycle_t','target_u','error_t','alarm_t','run_t','stop_t','wait_p_t','full_p_t','adjust_t','set_up_t','plan_s_t','time_hr','time_min']
-            columns_not_sum = ['time', 'topic', 'spec','d_str1', 'd_str2','rssi']
-            client = InfluxDBClient(self.influx_server, self.influx_port, self.influx_user_login,self.influx_password, self.influx_database)
+            client = InfluxDBClient(self.influx_server, 8086, self.influx_user_login,self.influx_password, self.influx_database)
             mqtt_topic_value = list(str(self.mqtt_topic).split(","))
-
             now = datetime.datetime.now()
             current_time_epoch = int(time.time()) * 1000 *1000 *1000
             one_hour_ago = now - datetime.timedelta(hours=1)
             previous_time_epoch = int(one_hour_ago.timestamp()) * 1000 *1000 *1000
-            df_data = pd.DataFrame(columns=['time'] + columns_to_sum)
-
+            ##############################################################################
             for i in range(len(mqtt_topic_value)):
-                query = f"select time,topic,{self.column_names} from mqtt_consumer where topic = '{mqtt_topic_value[i]}' and time >= {previous_time_epoch} and time < {current_time_epoch} " 
+                query = f"select time,topic,{self.column_names} from mqtt_consumer where topic = '{mqtt_topic_value[i]}' and time >= {previous_time_epoch} and time < {current_time_epoch} "
+                # query = f"select time,topic,wos,d_str1,d_str2,{self.column_names} from mqtt_consumer where topic = '{mqtt_topic_value[i]}' and time >= {previous_time_epoch} and time < {current_time_epoch} " 
                 result = client.query(query)
                 df_result = pd.DataFrame(result.get_points())
                 if not df_result.empty:
                     df_result = df_result.sort_values(by='time',ascending=False)
                     df_result = df_result.fillna(0)
-                    df_result = df_result[df_result['model'] != '0']
-                    df_result['judge'] = df_result.groupby('model')['daily_ok'].diff().fillna(0) > 0
-                    df1 = df_result.groupby('model').head(1)
-                    df2 = df_result[df_result['judge']]
- 
-                    for model_value in df1['model'].unique():
-                        df1_filtered = df1[df1['model'] == model_value]
-                        df2_filtered = df2[df2['model'] == model_value]
+                    df_result = df_result[df_result['wos'] !='']
+                    df_result['combine_1'] = df_result['wos'].astype(str) + df_result['ball_gauge_c1'].astype(str) +df_result['ball_gauge_c2'].astype(str) + df_result['ball_gauge_c3'].astype(str) + df_result['ball_gauge_c4'].astype(str)+df_result['ball_gauge_c5'].astype(str)
+                    df_result['group_index'] = (df_result['combine_1'] != df_result['combine_1'].shift()).cumsum()
+                    df_result['combine_2'] = df_result['combine_1'].astype(str) + df_result['group_index'].astype(str)
+                    df_data = df_result.drop_duplicates(subset=['combine_2'],keep='first')
 
-                        for col in columns_to_sum:
-                            sum_value = df1_filtered[col].iloc[0] + df2_filtered[col].sum()
-                            df_data.loc[model_value, col] = sum_value
-
-                        for col in columns_not_sum:
-                            df_data.loc[model_value, col] = df1_filtered[col].iloc[0]
-
-                        df_data.loc[model_value, 'model'] = model_value
-
-            self.df_influx = df_data
-            print(self.df_influx)
-        except Exception as e:  
+                self.df_influx = pd.concat([self.df_influx,df_data],ignore_index=True)
+        except Exception as e:
             self.error_msg(self.calculate2.__name__,"cannot query influxdb",e)
 
     def edit_col(self):
