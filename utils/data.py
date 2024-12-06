@@ -141,9 +141,9 @@ class DATA(PREPARE):
                     df_result['combine_1'] = df_result['wos'].astype(str) + df_result['ball_gauge_c1'].astype(str) +df_result['ball_gauge_c2'].astype(str) + df_result['ball_gauge_c3'].astype(str) + df_result['ball_gauge_c4'].astype(str)+df_result['ball_gauge_c5'].astype(str)
                     df_result['group_index'] = (df_result['combine_1'] != df_result['combine_1'].shift()).cumsum()
                     df_result['combine_2'] = df_result['combine_1'].astype(str) + df_result['group_index'].astype(str)
-                    df_data = df_result.drop_duplicates(subset=['combine_2'],keep='first')
+                    df_result = df_result.drop_duplicates(subset=['combine_2'],keep='first')
 
-                self.df_influx = pd.concat([self.df_influx,df_data],ignore_index=True)
+                self.df_influx = pd.concat([self.df_influx,df_result],ignore_index=True)
         except Exception as e:
             self.error_msg(self.calculate2.__name__,"cannot query influxdb",e)
 
