@@ -853,6 +853,11 @@ command = python /app/main_status.py
 schedule = {schedule_alarm}
 container = mms_alarm
 command = python /app/main_alarm.py
+
+[job-run "autodrop"]
+schedule = @monthly
+container = auto_drop
+command = python /app/autodrop.py
 '''
     save_schedule_config(new_config)
 
