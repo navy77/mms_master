@@ -189,6 +189,7 @@ class MC_ALARM(PREPARE):
             self.query_influx()
             if self.df_influx is not None:
                 self.edit_col()
+                time.sleep(5)
                 self.df_to_db()
                 self.ok_msg(self.df_to_db.__name__)
         else:

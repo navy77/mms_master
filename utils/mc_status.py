@@ -189,7 +189,7 @@ class MC_STATUS(PREPARE):
             self.query_influx()
             if self.df_influx is not None:
                 self.edit_col()
-                print(self.df_insert)
+                time.sleep(5)
                 self.df_to_db()
                 self.ok_msg(self.df_to_db.__name__)
         else:

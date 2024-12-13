@@ -216,6 +216,7 @@ class DATA(PREPARE):
 
             if not self.df_influx.empty:
                 self.edit_col()
+                time.sleep(5)
                 self.df_to_db()
                 self.ok_msg(self.df_to_db.__name__)
         else:
