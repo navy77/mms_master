@@ -170,7 +170,8 @@ def add_column():
         dotenv.set_key(dotenv_file,"PRODUCTION_TABLE_COLUMNS",os.environ["PRODUCTION_TABLE_COLUMNS"])
         dotenv.set_key(dotenv_file,"PRODUCTION_COLUMN_NAMES",os.environ["PRODUCTION_COLUMN_NAMES"])
 
-        restart_container("telegraf_mms")
+        program_no = str(os.environ["NO"])
+        restart_container(f"telegraf_mms{program_no}")
         st.success('Done!', icon="✅")
         time.sleep(0.5)
         st.rerun()
@@ -501,8 +502,9 @@ def config_sensor_registry_add():
 
                     update_config_file2(telegraf_path,mqtt_ip)
                     time.sleep(0.5)
-                    restart_container("telegraf_mms")
-                    restart_container("influxdb_mms")
+                    program_no = str(os.environ["NO"])
+                    restart_container(f"telegraf_mms{program_no}")
+                    restart_container(f"influxdb_mms{program_no}")
                     st.success('Done!', icon="✅")
                     time.sleep(0.5)
                 st.rerun()
@@ -838,25 +840,26 @@ def save_schedule_config(new_config):
         file.write(new_config)
 
 def schedule_config(schedule_data,schedule_status,schedule_alarm):
+    program_no = str(os.environ["NO"])
     new_config = f'''
-[job-run "MMS Data"]
+[job-run "MMS Data{program_no}"]
 schedule = {schedule_data}
-container = mms_data
+container = mms_data{program_no}
 command = python /app/main_data.py
 
-[job-run "MMS Status"]
+[job-run "MMS Status{program_no}"]
 schedule = {schedule_status}
-container = mms_status
+container = mms_status{program_no}
 command = python /app/main_status.py
 
-[job-run "MMS Alarm"]
+[job-run "MMS Alarm{program_no}"]
 schedule = {schedule_alarm}
-container = mms_alarm
+container = mms_alarm{program_no}
 command = python /app/main_alarm.py
 
-[job-run "autodrop"]
+[job-run "autodrop{program_no}"]
 schedule = @monthly
-container = auto_drop
+container = auto_drop{program_no}
 command = python /app/autodrop.py
 '''
     save_schedule_config(new_config)
@@ -990,7 +993,8 @@ def main_layout():
 
                 st.success('SCHEDULE CONFIEMED', icon="✅")
                 time.sleep(0.5)
-                restart_container("ofelia")
+                program_no = str(os.environ["NO"])
+                restart_container(f"ofelia{program_no}")
                 st.rerun()
             calculation_method()
 

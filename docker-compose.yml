@@ -1,8 +1,8 @@
-version: '3.8' 
+
 services:
   mms_app:
     image: "mic/mms_app:2.0.0"
-    container_name: streamlit
+    container_name: 'streamlit${NO}'
     privileged: true
     build:
       context: .  
@@ -12,65 +12,72 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./.env:/app/.env
     ports:
-      - '7771:8501' 
-    depends_on:
-      - influxdb_mms
-      - telegraf_mms
+      - '${ST_PORT}:8501'
+    env_file:
+      - .env
 
   mms_data:
     image: "mic/mms_data:2.0.0"
-    container_name: mms_data
+    container_name: 'mms_data${NO}'
     privileged: true
     build:
       context: .
       dockerfile: Dockerfile-data
     volumes:
       - ./.env:/app/.env
+    env_file:
+      - .env
     
   mms_status:
     image: "mic/mms_status:2.0.0"
-    container_name: mms_status
+    container_name: 'mms_status${NO}'
     privileged: true
     build:
       context: .
       dockerfile: Dockerfile-status
     volumes:
       - ./.env:/app/.env
+    env_file:
+      - .env
 
   mms_alarm:
     image: "mic/mms_alarm:2.0.0"
-    container_name: mms_alarm
+    container_name: 'mms_alarm${NO}'
     privileged: true
     build:
       context: .
       dockerfile: Dockerfile-alarm
     volumes:
       - ./.env:/app/.env
+    env_file:
+      - .env
 
   auto_drop:
-    container_name: auto_drop
+    container_name: 'auto_drop${NO}'
     privileged: true
     build:
       context: .
       dockerfile: Dockerfile-autodrop
     volumes:
       - ./.env:/app/.env
+    env_file:
+      - .env
 
   telegraf_mms:
     image: telegraf
     privileged: true
-    container_name: telegraf_mms
+    container_name: 'telegraf_mms${NO}'
     restart: always
     volumes:
       - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
-    depends_on:
-      - influxdb_mms
     ports:
-      - '8125:8125'
+      - '${TG_PORT}:8125'
+    env_file:
+      - .env
 
   influxdb_mms:
     image: influxdb:1.8-alpine
-    container_name: influxdb_mms
+    container_name: 'influxdb_mms${NO}'
     restart: always
     environment:
       - INFLUXDB_DB=influx
@@ -86,20 +93,17 @@ services:
   ofelia:
     image: mcuadros/ofelia:latest
     privileged: true
-    depends_on:
-      - mms_data
-      - mms_alarm
-      - mms_status
-    container_name: ofelia
+    container_name: 'ofelia${NO}'
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./config.ini:/etc/ofelia/config.ini
+    env_file:
+      - .env
 
 volumes:
   influxdb_data:
     driver_opts:
       type: none
-      device: /home/influxdb_data
+      device: '/home/influxdb_data${NO}'
       o: bind
-

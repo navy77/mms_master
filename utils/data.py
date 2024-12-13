@@ -122,7 +122,7 @@ class DATA(PREPARE):
       
     def calculate2(self) :
         try:
-            client = InfluxDBClient(self.influx_server, 8086, self.influx_user_login,self.influx_password, self.influx_database)
+            client = InfluxDBClient(self.influx_server, self.influx_port, self.influx_user_login,self.influx_password, self.influx_database)
             mqtt_topic_value = list(str(self.mqtt_topic).split(","))
             now = datetime.datetime.now()
             current_time_epoch = int(time.time()) * 1000 *1000 *1000
