@@ -563,6 +563,8 @@ def config_mqtt_add():
                 mqtt_1 = None
                 mqtt_2 = None
                 mqtt_3 = None
+                mqtt_4 = None
+
                 mqtt_list = mqtt_value.split(",")
 
                 for i in range(len(mqtt_list)):
@@ -592,6 +594,11 @@ def config_mqtt_add():
                     os.environ["MQTT_TOPIC_3"] = str(mqtt_3)
                     dotenv.set_key(dotenv_file,"MQTT_TOPIC_3",os.environ["MQTT_TOPIC_3"])
 
+                mqtt_4 = str(os.environ["MQTT_TOPIC_1"])
+                mqtt_4 = mqtt_4.replace('data/', 'mqtt/')
+                os.environ["MQTT_TOPIC_4"] = str(mqtt_4)
+                dotenv.set_key(dotenv_file,"MQTT_TOPIC_4",os.environ["MQTT_TOPIC_4"])
+                
                 st.success('Done!', icon="✅")
                 time.sleep(0.5)
                 st.rerun()
@@ -861,6 +868,11 @@ command = python /app/main_alarm.py
 schedule = @monthly
 container = auto_drop{program_no}
 command = python /app/autodrop.py
+
+[job-run "Iot monitor{program_no}"]
+schedule = @every 5m
+container = iot_monitor{program_no}
+command = python /app/monitor.py
 '''
     save_schedule_config(new_config)
 

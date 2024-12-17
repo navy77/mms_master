@@ -63,6 +63,17 @@ services:
     env_file:
       - .env
 
+  iot_monitor:
+    container_name: 'iot_monitor${NO}'
+    privileged: true
+    build:
+      context: .
+      dockerfile: Dockerfile-monitor
+    volumes:
+      - ./.env:/app/.env
+    env_file:
+      - .env
+
   telegraf_mms:
     image: telegraf
     privileged: true
