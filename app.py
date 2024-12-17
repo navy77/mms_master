@@ -891,12 +891,20 @@ def calculation_method():
         "every period time with accumulate data":"2"
             }
     calculate_select_value = calculate_dict.get(calculate_select)
+
+    if calculate_select_value == "2":
+        production_column_names = os.environ["PRODUCTION_COLUMN_NAMES"].split(',')
+        keyword_separate_group_data = st.multiselect('Select keyword fot separate group data (max 5)',(production_column_names),key='keyword_separate_group_data',max_selections=5)
+        column_names_string = ','.join(keyword_separate_group_data)
+
     cal_button = st.button("SUBMIT",key='cal_button')
 
     if cal_button:
         os.environ['CALCULATE_FUNCTION'] = str(calculate_select_value)
         dotenv.set_key(dotenv_file,"CALCULATE_FUNCTION",os.environ["CALCULATE_FUNCTION"])
-        st.success('CONFIEMED', icon="✅")
+        os.environ['CALCULATE_FACTOR'] = str(column_names_string)
+        dotenv.set_key(dotenv_file,"CALCULATE_FACTOR",os.environ["CALCULATE_FACTOR"])
+        st.success('CONFIEMED', icon="✅") 
         time.sleep(0.5)
         st.rerun()
     st.markdown("---")

@@ -13,7 +13,7 @@ class PREPARE:
 
     def __init__(self,server,database,user_login,password,table,table_columns,table_log,table_columns_log,
                  influx_server,influx_database,influx_user_login,influx_password,influx_port,
-                 column_names,mqtt_topic,initial_db,calculate_function):
+                 column_names,mqtt_topic,initial_db,calculate_function,calculate_factor):
         
         self.server = server
         self.database = database
@@ -34,6 +34,7 @@ class PREPARE:
         self.mqtt_topic = mqtt_topic
         self.initial_db = initial_db
         self.calculate_function = calculate_function
+        self.calculate_factor = calculate_factor
 
         self.df_insert = None
         self.df_influx = None
@@ -97,10 +98,10 @@ class PREPARE:
 class DATA(PREPARE):
     def __init__(self,server,database,user_login,password,table,table_columns,table_log,table_columns_log,
                  influx_server,influx_database,influx_user_login,influx_password,influx_port,
-                 column_names,mqtt_topic,initial_db,calculate_function):
+                 column_names,mqtt_topic,initial_db,calculate_function,calculate_factor):
         super().__init__(server,database,user_login,password,table,table_columns,table_log,table_columns_log,
                          influx_server,influx_database,influx_user_login,influx_password,influx_port,
-                         column_names,mqtt_topic,initial_db,calculate_function)        
+                         column_names,mqtt_topic,initial_db,calculate_function,calculate_factor)        
 
     def calculate1(self) :
         try:
@@ -128,17 +129,29 @@ class DATA(PREPARE):
             current_time_epoch = int(time.time()) * 1000 *1000 *1000
             one_hour_ago = now - datetime.timedelta(hours=1)
             previous_time_epoch = int(one_hour_ago.timestamp()) * 1000 *1000 *1000
+
+            # a0= self.calculate_factor.split(',')[0]
+            # a1= self.calculate_factor.split(',')[1]
+            # a2= self.calculate_factor.split(',')[2]
+            # a3= self.calculate_factor.split(',')[3]
+            # a4= self.calculate_factor.split(',')[4]
+
             ##############################################################################
             for i in range(len(mqtt_topic_value)):
                 query = f"select time,topic,{self.column_names} from mqtt_consumer where topic = '{mqtt_topic_value[i]}' and time >= {previous_time_epoch} and time < {current_time_epoch} "
                 # query = f"select time,topic,wos,d_str1,d_str2,{self.column_names} from mqtt_consumer where topic = '{mqtt_topic_value[i]}' and time >= {previous_time_epoch} and time < {current_time_epoch} " 
+
                 result = client.query(query)
                 df_result = pd.DataFrame(result.get_points())
+                
                 if not df_result.empty:
                     df_result = df_result.sort_values(by='time',ascending=False)
                     df_result = df_result.fillna(0)
-                    df_result = df_result[df_result['wos'] !='']
-                    df_result['combine_1'] = df_result['wos'].astype(str) + df_result['ball_gauge_c1'].astype(str) +df_result['ball_gauge_c2'].astype(str) + df_result['ball_gauge_c3'].astype(str) + df_result['ball_gauge_c4'].astype(str)+df_result['ball_gauge_c5'].astype(str)
+                    columns = self.calculate_factor.split(',')
+                    df_result = df_result[df_result[self.calculate_factor.split(',')[0]] !='']
+                    df_result['combine_1'] = df_result[columns].astype(str).apply(lambda row: ''.join(row), axis=1)
+
+                    # df_result['combine_1'] = df_result['wos'].astype(str) + df_result['ball_gauge_c1'].astype(str) +df_result['ball_gauge_c2'].astype(str) + df_result['ball_gauge_c3'].astype(str) + df_result['ball_gauge_c4'].astype(str)+df_result['ball_gauge_c5'].astype(str)
                     df_result['group_index'] = (df_result['combine_1'] != df_result['combine_1'].shift()).cumsum()
                     df_result['combine_2'] = df_result['combine_1'].astype(str) + df_result['group_index'].astype(str)
                     # df_result = df_result.drop_duplicates(subset=['combine_2'],keep='first')
@@ -146,8 +159,8 @@ class DATA(PREPARE):
                     df_result['rank'] = df_result.groupby('combine_2').cumcount() + 1
                     df_result = df_result[(df_result['rank'] == 2) | (df_result['rank'] == 1)].drop(columns=['rank'])
                     df_result = df_result.drop_duplicates(subset=['combine_2'],keep='last')
-
                 self.df_influx = pd.concat([self.df_influx,df_result],ignore_index=True)
+
         except Exception as e:
             self.error_msg(self.calculate2.__name__,"cannot query influxdb",e)
 
@@ -164,7 +177,6 @@ class DATA(PREPARE):
             df["data_timestamp"] = df['data_timestamp'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
             df.fillna(0,inplace=True)
             self.df_insert = df
-            print(self.df_insert)
 
         except Exception as e:
             self.error_msg(self.edit_col.__name__,"cannot edit dataframe data",e)
@@ -211,7 +223,8 @@ class DATA(PREPARE):
             if self.calculate_function == '1':
                 self.calculate1()
             elif self.calculate_function == '2':
-                self.calculate2()   
+                self.calculate2()
+
             else :self.calculate1()
 
             if not self.df_influx.empty:

@@ -1,7 +1,7 @@
 
 services:
   mms_app:
-    image: "mic/mms_app:2.0.0"
+    image: "mic/mms_app:2.0.1"
     container_name: 'streamlit${NO}'
     privileged: true
     build:
@@ -17,7 +17,7 @@ services:
       - .env
 
   mms_data:
-    image: "mic/mms_data:2.0.0"
+    image: "mic/mms_data:2.0.1"
     container_name: 'mms_data${NO}'
     privileged: true
     build:
@@ -29,7 +29,7 @@ services:
       - .env
     
   mms_status:
-    image: "mic/mms_status:2.0.0"
+    image: "mic/mms_status:2.0.1"
     container_name: 'mms_status${NO}'
     privileged: true
     build:
@@ -41,7 +41,7 @@ services:
       - .env
 
   mms_alarm:
-    image: "mic/mms_alarm:2.0.0"
+    image: "mic/mms_alarm:2.0.1"
     container_name: 'mms_alarm${NO}'
     privileged: true
     build:
