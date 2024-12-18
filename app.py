@@ -908,7 +908,8 @@ def calculation_method():
         production_column_names = os.environ["PRODUCTION_COLUMN_NAMES"].split(',')
         keyword_separate_group_data = st.multiselect('Select keyword fot separate group data (max 5)',(production_column_names),key='keyword_separate_group_data',max_selections=5)
         column_names_string = ','.join(keyword_separate_group_data)
-
+    else:
+        column_names_string=""
     cal_button = st.button("SUBMIT",key='cal_button')
 
     if cal_button:
