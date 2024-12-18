@@ -56,7 +56,7 @@ class MONITOR:
             })
             df = pd.merge(df_all, self.df_edit, on=['topic', 'mc_no', 'process'], how='left')
             df['modbus'] = df['modbus'].fillna(0)
-            df['iot'] = df['iot'].fillna(0)
+            df['broker'] = df['broker'].fillna(0)
             self.df_insert = df
         except Exception as e:
             print(e)
@@ -74,7 +74,7 @@ class MONITOR:
                 },
                 "fields": {
                     "modbus": float(row['modbus']),
-                    "iot": float(row['iot'])
+                    "broker": float(row['broker'])
                 }
             }
             json_payload.append(json_body)
