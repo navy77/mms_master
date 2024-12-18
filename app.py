@@ -960,9 +960,6 @@ def main_layout():
         with tab4:
             st.header("DATAFLOW PREVIEW")
             dataflow_production_influx()
-            # dataflow_test1()
-            # dataflow_test2()
-            # dataflow_test3()
             dataflow_production_sql()
         with tab5:
             st.header("LOG")

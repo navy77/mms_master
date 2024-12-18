@@ -23,7 +23,7 @@ class MONITOR:
             client = InfluxDBClient(self.influx_server,self.influx_port,self.influx_login,self.influx_password,self.influx_database )
             mqtt_topic_value = list(str(self.mqtt_topic).split(","))
             for i in range(len(mqtt_topic_value)):
-                query = f"select topic,modbus,iot from mqtt_consumer where topic = '{mqtt_topic_value[i]}' order by time desc limit 1"
+                query = f"select topic,modbus,broker from mqtt_consumer where topic = '{mqtt_topic_value[i]}' order by time desc limit 1"
                 result = client.query(query)
                 if list(result):
                     result = list(result)[0][0]
