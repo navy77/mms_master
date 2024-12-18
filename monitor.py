@@ -4,7 +4,7 @@ import os
 import time
 import pandas as pd
 import datetime
-
+from datetime import datetime
 class MONITOR:
     def __init__(self):
         self.mqtt_topic = os.getenv('MQTT_TOPIC_4')
@@ -40,7 +40,19 @@ class MONITOR:
             df_split = df['topic'].str.split('/', expand=True)
             df['mc_no'] = df_split[3].values
             df['process'] = df_split[2].values
-            df.drop(columns=['time'],inplace=True)
+            # df.drop(columns=['time'],inplace=True)
+            df.rename(columns = {'time':'data_timestamp'}, inplace = True)
+            df["data_timestamp"] =   pd.to_datetime(df["data_timestamp"]).dt.tz_convert(None)
+            df["data_timestamp"] = df["data_timestamp"] + pd.DateOffset(hours=7)    
+            df["data_timestamp"] = df['data_timestamp'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M'))
+            current_time = datetime.now().strftime('%Y-%m-%d %H:%M')
+            df["current_time"] =  current_time
+            df['data_timestamp'] = pd.to_datetime(df['data_timestamp'])
+            df['current_time'] = pd.to_datetime(df['current_time'])
+            df['diff'] = df["current_time"] -  df["data_timestamp"]
+            df['judge'] = df['diff'].apply(lambda x: 0 if x > pd.Timedelta(minutes=4) else 1)
+            df = df[df['judge'] == 1]
+            df.drop(columns=['data_timestamp','diff','current_time','judge'],inplace=True)
             df.fillna(0,inplace=True)
             self.df_edit = df
         except Exception as e:

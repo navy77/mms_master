@@ -661,6 +661,12 @@ def config_mqtt_delete():
                     dotenv.set_key(dotenv_file,"MQTT_TOPIC_1",os.environ["MQTT_TOPIC_1"])
                     dotenv.set_key(dotenv_file,"MQTT_TOPIC_2",os.environ["MQTT_TOPIC_2"])
                     dotenv.set_key(dotenv_file,"MQTT_TOPIC_3",os.environ["MQTT_TOPIC_3"])
+
+                    mqtt_4 = str(os.environ["MQTT_TOPIC_1"])
+                    mqtt_4 = mqtt_4.replace('data/', 'mqtt/')
+                    os.environ["MQTT_TOPIC_4"] = str(mqtt_4)
+                    dotenv.set_key(dotenv_file,"MQTT_TOPIC_4",os.environ["MQTT_TOPIC_4"])
+                    
                     st.success('Deleted!', icon="✅")
                     time.sleep(0.5)
                     st.rerun()
