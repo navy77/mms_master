@@ -4,7 +4,7 @@ import os
 import time
 import pandas as pd
 import datetime
-from datetime import datetime
+# from datetime import datetime
 class MONITOR:
     def __init__(self):
         self.mqtt_topic = os.getenv('MQTT_TOPIC_4')
@@ -28,8 +28,13 @@ class MONITOR:
                 if list(result):
                     result = list(result)[0][0]
                     result_lists.append(result)
-                    result_df = pd.DataFrame.from_dict(result_lists)
-            self.df_influx = result_df
+                    # result_df = pd.DataFrame.from_dict(result_lists)
+            if result_lists:
+                result_df = pd.DataFrame.from_dict(result_lists)
+                self.df_influx = result_df
+            else:  
+                result_df = pd.DataFrame()
+                self.df_influx = result_df
             return self.df_influx
         except Exception as e:
             print(e)
@@ -45,7 +50,8 @@ class MONITOR:
             df["data_timestamp"] =   pd.to_datetime(df["data_timestamp"]).dt.tz_convert(None)
             df["data_timestamp"] = df["data_timestamp"] + pd.DateOffset(hours=7)    
             df["data_timestamp"] = df['data_timestamp'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M'))
-            current_time = datetime.now().strftime('%Y-%m-%d %H:%M')
+            current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+
             df["current_time"] =  current_time
             df['data_timestamp'] = pd.to_datetime(df['data_timestamp'])
             df['current_time'] = pd.to_datetime(df['current_time'])
@@ -55,6 +61,7 @@ class MONITOR:
             df.drop(columns=['data_timestamp','diff','current_time','judge'],inplace=True)
             df.fillna(0,inplace=True)
             self.df_edit = df
+
         except Exception as e:
             print(e)
 
@@ -70,6 +77,20 @@ class MONITOR:
             df['modbus'] = df['modbus'].fillna(0)
             df['broker'] = df['broker'].fillna(0)
             self.df_insert = df
+        except Exception as e:
+            print(e)
+
+    def convert_data2(self):
+        try:
+            topic_list = self.mqtt_topic.split(",")
+            df_all = pd.DataFrame({
+                'topic': topic_list,
+                'mc_no': [topic.split('/')[-1] for topic in topic_list],  
+                'process': ['demo'] * len(topic_list)  
+            })
+            df_all['modbus'] = 0
+            df_all['broker'] = 0
+            self.df_insert = df_all
         except Exception as e:
             print(e)
 
@@ -92,15 +113,22 @@ class MONITOR:
             json_payload.append(json_body)
         try:
             client.write_points(json_payload)
+            print(self.df_insert)
             print("successfully")
         except Exception as e:
             print(e)
 
     def main(self):
         self.get_influx()
-        self.edit_col()
-        self.convert_data()
-        self.insert_influx(self.df_insert,"iot_monitor")
+        if not self.df_influx.empty:
+            self.edit_col()
+            self.convert_data()
+            self.insert_influx(self.df_insert,"iot_monitor")
+            print(self.df_insert)
+        else:              
+            self.convert_data2()
+            self.insert_influx(self.df_insert,"iot_monitor")  
+            print(self.df_insert)
 
 if __name__ == "__main__":
     dotenv_file = dotenv.find_dotenv()
