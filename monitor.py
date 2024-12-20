@@ -3,8 +3,9 @@ import dotenv
 import os
 import time
 import pandas as pd
-import datetime
-# from datetime import datetime
+# import datetime
+from datetime import datetime
+
 class MONITOR:
     def __init__(self):
         self.mqtt_topic = os.getenv('MQTT_TOPIC_4')
@@ -50,14 +51,16 @@ class MONITOR:
             df["data_timestamp"] =   pd.to_datetime(df["data_timestamp"]).dt.tz_convert(None)
             df["data_timestamp"] = df["data_timestamp"] + pd.DateOffset(hours=7)    
             df["data_timestamp"] = df['data_timestamp'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M'))
-            current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
-
+            current_time = datetime.now().strftime('%Y-%m-%d %H:%M')
+            print(current_time)
             df["current_time"] =  current_time
             df['data_timestamp'] = pd.to_datetime(df['data_timestamp'])
             df['current_time'] = pd.to_datetime(df['current_time'])
             df['diff'] = df["current_time"] -  df["data_timestamp"]
             df['judge'] = df['diff'].apply(lambda x: 0 if x > pd.Timedelta(minutes=4) else 1)
+            print(df)
             df = df[df['judge'] == 1]
+            print(df)
             df.drop(columns=['data_timestamp','diff','current_time','judge'],inplace=True)
             df.fillna(0,inplace=True)
             self.df_edit = df
@@ -119,16 +122,18 @@ class MONITOR:
             print(e)
 
     def main(self):
+        current_time = datetime.now().strftime('%Y-%m-%d %H:%M')
+        print(current_time)
         self.get_influx()
         if not self.df_influx.empty:
             self.edit_col()
             self.convert_data()
             self.insert_influx(self.df_insert,"iot_monitor")
-            print(self.df_insert)
+
         else:              
             self.convert_data2()
             self.insert_influx(self.df_insert,"iot_monitor")  
-            print(self.df_insert)
+
 
 if __name__ == "__main__":
     dotenv_file = dotenv.find_dotenv()

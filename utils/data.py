@@ -129,13 +129,8 @@ class DATA(PREPARE):
             current_time_epoch = int(time.time()) * 1000 *1000 *1000
             one_hour_ago = now - datetime.timedelta(hours=1)
             previous_time_epoch = int(one_hour_ago.timestamp()) * 1000 *1000 *1000
-
-            # a0= self.calculate_factor.split(',')[0]
-            # a1= self.calculate_factor.split(',')[1]
-            # a2= self.calculate_factor.split(',')[2]
-            # a3= self.calculate_factor.split(',')[3]
-            # a4= self.calculate_factor.split(',')[4]
-
+            print(f"prev:{previous_time_epoch}")
+            print(f"current:{current_time_epoch}")
             ##############################################################################
             for i in range(len(mqtt_topic_value)):
                 query = f"select time,topic,{self.column_names} from mqtt_consumer where topic = '{mqtt_topic_value[i]}' and time >= {previous_time_epoch} and time < {current_time_epoch} "

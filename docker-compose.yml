@@ -1,12 +1,14 @@
 
 services:
   mms_app:
-    image: "mic/mms_app:2.0.1"
-    container_name: 'streamlit${NO}'
-    privileged: true
     build:
       context: .  
-      dockerfile: Dockerfile-app
+      dockerfile: Dockerfile
+    environment:
+      - TZ=Asia/Bangkok
+    image: "mic/mms_app:2.0.2"
+    container_name: 'streamlit${NO}'
+    privileged: true
     volumes:
       - ./telegraf.conf:/app/telegraf.conf
       - ./config.ini:/app/config.ini
@@ -16,66 +18,67 @@ services:
       - '${ST_PORT}:8501'
     env_file:
       - .env
+    command: ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
 
   mms_data:
-    image: "mic/mms_data:2.0.1"
+    image: "mic/mms_app:2.0.2"
     container_name: 'mms_data${NO}'
     privileged: true
-    build:
-      context: .
-      dockerfile: Dockerfile-data
     volumes:
       - ./.env:/app/.env
     env_file:
       - .env
+    environment:
+      - TZ=Asia/Bangkok
+    command: ["python", "main_data.py"]
     
   mms_status:
-    image: "mic/mms_status:2.0.1"
+    image: "mic/mms_app:2.0.2"
     container_name: 'mms_status${NO}'
     privileged: true
-    build:
-      context: .
-      dockerfile: Dockerfile-status
     volumes:
       - ./.env:/app/.env
     env_file:
       - .env
+    environment:
+      - TZ=Asia/Bangkok
+    command: ["python", "main_status.py"]
 
   mms_alarm:
-    image: "mic/mms_alarm:2.0.1"
+    image: "mic/mms_app:2.0.2"
     container_name: 'mms_alarm${NO}'
     privileged: true
-    build:
-      context: .
-      dockerfile: Dockerfile-alarm
     volumes:
       - ./.env:/app/.env
     env_file:
       - .env
+    environment:
+      - TZ=Asia/Bangkok
+    command: ["python", "main_alarm.py"] 
 
   auto_drop:
-    image: "mic/autodrop:2.0.1"
+    image: "mic/mms_app:2.0.2"
     container_name: 'auto_drop${NO}'
     privileged: true
-    build:
-      context: .
-      dockerfile: Dockerfile-autodrop
     volumes:
       - ./.env:/app/.env
     env_file:
       - .env
+    environment:
+      - TZ=Asia/Bangkok
+    command: ["python", "autodrop.py"] 
 
   iot_monitor:
-    image: "mic/iot_monitor:2.0.1"
+    image: "mic/mms_app:2.0.2"
     container_name: 'iot_monitor${NO}'
     privileged: true
-    build:
-      context: .
-      dockerfile: Dockerfile-monitor
     volumes:
       - ./.env:/app/.env
     env_file:
       - .env
+    environment:
+      - TZ=Asia/Bangkok
+    command: ["python", "monitor.py"] 
 
   telegraf_mms:
     image: telegraf
