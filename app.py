@@ -930,7 +930,7 @@ def calculation_method():
 
 def main_layout():
     st.set_page_config(
-            page_title="MES System 2.0.0",
+            page_title="MES System 2.0.2",
             page_icon="💻",
             layout="wide",
             initial_sidebar_state="expanded",
