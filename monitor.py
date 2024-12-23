@@ -58,7 +58,7 @@ class MONITOR:
             df['data_timestamp'] = pd.to_datetime(df['data_timestamp'])
             df['current_time'] = pd.to_datetime(df['current_time'])
             df['diff'] = df["current_time"] -  df["data_timestamp"]
-            df['judge'] = df['diff'].apply(lambda x: 0 if x > pd.Timedelta(minutes=4) else 1)
+            df['judge'] = df['diff'].apply(lambda x: 0 if x > pd.Timedelta(minutes=5) else 1)
             # print(df)
             df = df[df['judge'] == 1]
             print(df)
