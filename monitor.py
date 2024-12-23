@@ -14,6 +14,7 @@ class MONITOR:
         self.influx_password = os.environ["INFLUX_PASSWORD"]
         self.influx_database = os.environ["INFLUX_DATABASE"]
         self.influx_port = os.environ["INFLUX_PORT"]
+        self.process = os.environ["PROCESS"]
         self.df_influx = None
         self.df_edit = None
         self.df_insert = None
@@ -58,7 +59,7 @@ class MONITOR:
             df['current_time'] = pd.to_datetime(df['current_time'])
             df['diff'] = df["current_time"] -  df["data_timestamp"]
             df['judge'] = df['diff'].apply(lambda x: 0 if x > pd.Timedelta(minutes=4) else 1)
-            print(df)
+            # print(df)
             df = df[df['judge'] == 1]
             print(df)
             df.drop(columns=['data_timestamp','diff','current_time','judge'],inplace=True)
@@ -74,7 +75,7 @@ class MONITOR:
             df_all = pd.DataFrame({
                 'topic': topic_list,
                 'mc_no': [topic.split('/')[-1] for topic in topic_list],  
-                'process': ['demo'] * len(topic_list)  
+                'process': [self.process.lower()] * len(topic_list)  
             })
             df = pd.merge(df_all, self.df_edit, on=['topic', 'mc_no', 'process'], how='left')
             df['modbus'] = df['modbus'].fillna(0)
@@ -89,7 +90,7 @@ class MONITOR:
             df_all = pd.DataFrame({
                 'topic': topic_list,
                 'mc_no': [topic.split('/')[-1] for topic in topic_list],  
-                'process': ['demo'] * len(topic_list)  
+                'process': [self.process.lower()] * len(topic_list)  
             })
             df_all['modbus'] = 0
             df_all['broker'] = 0
@@ -122,8 +123,6 @@ class MONITOR:
             print(e)
 
     def main(self):
-        current_time = datetime.now().strftime('%Y-%m-%d %H:%M')
-        print(current_time)
         self.get_influx()
         if not self.df_influx.empty:
             self.edit_col()
