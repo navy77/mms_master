@@ -1,13 +1,10 @@
 import os
-
-from utils.data import DATA
+from pathlib import Path
 from dotenv import load_dotenv
-import dotenv
-load_dotenv()
-
+from utils.data import DATA
 try:
-    dotenv_file = dotenv.find_dotenv()
-    dotenv.load_dotenv(dotenv_file,override=True)
+    env_path = Path('.env')
+    load_dotenv(dotenv_path=env_path,override=True)
     influx_to_sqlserver = DATA(
         server=os.getenv('SERVER'),
         database=os.getenv('DATABASE'),

@@ -1,12 +1,10 @@
 import os
-
+from pathlib import Path
 from dotenv import load_dotenv
-load_dotenv()
-import dotenv
 from utils.alarm import MC_ALARM
 try:
-    dotenv_file = dotenv.find_dotenv()
-    dotenv.load_dotenv(dotenv_file,override=True)
+    env_path = Path('.env')
+    load_dotenv(dotenv_path=env_path,override=True)
     mc_alarm_to_sqlserver = MC_ALARM(
         server=os.getenv('SERVER'),
         database=os.getenv('DATABASE'),

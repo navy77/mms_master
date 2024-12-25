@@ -1,11 +1,12 @@
 import utils.constant as constant
 import pandas as pd
 import os
+import os
+from pathlib import Path
 import sys
 import pymssql
 import json
 import datetime
-from sqlalchemy import create_engine,text,engine
 from influxdb import InfluxDBClient
 import time
 
@@ -177,7 +178,6 @@ class DATA(PREPARE):
             self.error_msg(self.edit_col.__name__,"cannot edit dataframe data",e)
 
     def df_to_db(self):
-        #connect to db
         init_list = ['mc_no','process']
         insert_db_value = self.column_names.split(",")
         col_list = init_list+insert_db_value
@@ -202,7 +202,6 @@ class DATA(PREPARE):
                     )
                     """ 
                 cursor.execute(insert_string)
-                
                 cnxn.commit()
             cursor.close()
             self.df_insert = None
@@ -224,7 +223,8 @@ class DATA(PREPARE):
 
             if not self.df_influx.empty:
                 self.edit_col()
-                time.sleep(5)
+                time.sleep(1)
+                print(self.df_insert)
                 self.df_to_db()
                 self.ok_msg(self.df_to_db.__name__)
         else:

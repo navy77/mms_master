@@ -1,12 +1,14 @@
 import utils.constant as constant
 import pandas as pd
 import os
+from pathlib import Path
 import sys
 import pymssql
-import datetime
 from influxdb import InfluxDBClient
-import time
-import dotenv
+from datetime import datetime
+import datetime
+import time     
+from dotenv import load_dotenv,set_key
 
 class PREPARE:
 
@@ -112,10 +114,16 @@ class MC_STATUS(PREPARE):
                 result_lists.append(result_df)
             query_influx = pd.concat(result_lists, ignore_index=True)
 
-            dotenv.load_dotenv('../.env',override=True)
+            query_influx["time"] =   pd.to_datetime(query_influx["time"]).dt.tz_convert(None)
+            query_influx["time"] = query_influx["time"] + pd.DateOffset(hours=7)    
+            query_influx["time"] = query_influx['time'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S'))
+            
+            print(query_influx)
+            env_path = Path('utils/.env')
+            load_dotenv(dotenv_path=env_path,override=True)
             last_event = str(os.environ["MC_STATUS_TIME"])
+
             if not query_influx.empty :
-                
                 if last_event !='':
                     new_query_influx = query_influx[query_influx.time > last_event]
                     self.df_influx = new_query_influx
@@ -123,9 +131,10 @@ class MC_STATUS(PREPARE):
                 else:
                     self.df_influx = query_influx
                     newest_time = query_influx.head(1)['time'].values[0]
-                
-                dotenv_file = dotenv.find_dotenv('../.env')
-                dotenv.set_key(dotenv_file, "MC_STATUS_TIME", str(newest_time))
+
+                env_path = Path('utils/.env')
+                load_dotenv(dotenv_path=env_path,override=True)
+                set_key(env_path, "MC_STATUS_TIME", str(newest_time))
 
             else:
                 self.df_influx = None
@@ -142,9 +151,6 @@ class MC_STATUS(PREPARE):
             df['process'] = df_split[2].values
             df.drop(columns=['topic'],inplace=True)
             df.rename(columns = {'time':'occurred'}, inplace = True)
-            df["occurred"] =   pd.to_datetime(df["occurred"]).dt.tz_convert(None)
-            df["occurred"] = df["occurred"] + pd.DateOffset(hours=7)    
-            df["occurred"] = df['occurred'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S'))
             df.rename(columns={'status': 'mc_status'}, inplace=True)
             self.df_insert = df
  
@@ -189,7 +195,8 @@ class MC_STATUS(PREPARE):
             self.query_influx()
             if self.df_influx is not None:
                 self.edit_col()
-                time.sleep(5)
+                time.sleep(1)
+                print(self.df_insert)
                 self.df_to_db()
                 self.ok_msg(self.df_to_db.__name__)
         else:

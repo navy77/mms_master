@@ -128,7 +128,6 @@ class MONITOR:
             self.edit_col()
             self.convert_data()
             self.insert_influx(self.df_insert,"iot_monitor")
-
         else:              
             self.convert_data2()
             self.insert_influx(self.df_insert,"iot_monitor")  
