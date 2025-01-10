@@ -310,6 +310,11 @@ def config_initdb():
                 else:    
                     result_5,result_6 = False,False
 
+                # create table monitor
+                monitor_tb = "MONITOR_IOT"
+                monitor_col = "registered datetime,mc_no varchar(10),process varchar(10),broker varchar(1),modbus varchar(1)"
+                a = create_table(st,os.environ["SERVER"],os.environ["USER_LOGIN"],os.environ["PASSWORD"],os.environ["DATABASE"],table=monitor_tb,table_columns=monitor_col)
+                
                 results = [result_1,result_2,result_3,result_4,result_5,result_6]
                 if not results:
                     st.error('UNKNOWN PROJECT TYPE', icon="❌")

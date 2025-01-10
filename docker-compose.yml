@@ -137,8 +137,8 @@ volumes:
   influxdb_data1:
     driver_opts:
       type: none
-      device: '/home/influxdb_data${NO}'
-      # device: '/influxdb_data${NO}'
+      # device: '/home/influxdb_data${NO}'
+      device: '/influxdb_data${NO}'
       o: bind
 
 

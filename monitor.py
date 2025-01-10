@@ -18,7 +18,7 @@ class MONITOR:
         self.influx_port = os.environ["INFLUX_PORT"]
         self.process = os.environ["PROCESS"]
         self.database = os.environ["DATABASE"]
-        self.table = "monitor"
+        self.table = "MONITOR_IOT"
         self.server = os.environ["SERVER"]
         self.user_login = os.environ["USER_LOGIN"]
         self.password = os.environ["PASSWORD"]
@@ -174,7 +174,6 @@ class MONITOR:
             print(f"insert data successfully")     
         except Exception as e:
             print('error: '+str(e))
-
 
     def main(self):
         self.get_influx()
