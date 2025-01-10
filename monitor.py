@@ -1,10 +1,12 @@
 from influxdb import InfluxDBClient
 import dotenv
 import os
+import sys
 import time
 import pandas as pd
 # import datetime
 from datetime import datetime
+import pymssql
 
 class MONITOR:
     def __init__(self):
@@ -15,9 +17,23 @@ class MONITOR:
         self.influx_database = os.environ["INFLUX_DATABASE"]
         self.influx_port = os.environ["INFLUX_PORT"]
         self.process = os.environ["PROCESS"]
+        self.database = os.environ["DATABASE"]
+        self.table = "monitor"
+        self.server = os.environ["SERVER"]
+        self.user_login = os.environ["USER_LOGIN"]
+        self.password = os.environ["PASSWORD"]
         self.df_influx = None
         self.df_edit = None
         self.df_insert = None
+
+    def conn_sql(self):
+        try:
+            cnxn = pymssql.connect(self.server, self.user_login, self.password, self.database)
+            cursor = cnxn.cursor()
+            return cnxn,cursor
+        except Exception as e:
+            print('error: '+str(e))
+            sys.exit()
 
     def get_influx(self):
         try:
@@ -39,7 +55,7 @@ class MONITOR:
                 self.df_influx = result_df
             return self.df_influx
         except Exception as e:
-            print(e)
+            print('error: '+str(e))
 
     def edit_col(self):
         try:
@@ -67,7 +83,7 @@ class MONITOR:
             self.df_edit = df
 
         except Exception as e:
-            print(e)
+            print('error: '+str(e))
 
     def convert_data(self):
         try:
@@ -82,7 +98,7 @@ class MONITOR:
             df['broker'] = df['broker'].fillna(0)
             self.df_insert = df
         except Exception as e:
-            print(e)
+            print('error: '+str(e))
 
     def convert_data2(self):
         try:
@@ -96,7 +112,7 @@ class MONITOR:
             df_all['broker'] = 0
             self.df_insert = df_all
         except Exception as e:
-            print(e)
+            print('error: '+str(e))
 
     def insert_influx(self,df,measurement):
         client = InfluxDBClient(self.influx_server,self.influx_port,self.influx_login,self.influx_password,self.influx_database)
@@ -120,7 +136,45 @@ class MONITOR:
             print(self.df_insert)
             print("successfully")
         except Exception as e:
-            print(e)
+            print('error: '+str(e))
+
+    def df_to_db(self):
+        init_list = ['mc_no','process']
+        insert_db_value = ['broker','modbus']
+        col_list = init_list+insert_db_value
+        cnxn,cursor = self.conn_sql()
+        try:
+            df = self.df_insert.copy()
+            df_split = df['topic'].str.split('/', expand=True)
+            df['mc_no'] = df_split[3].values
+            df['process'] = df_split[2].values    
+            df.drop(columns=['topic'],inplace=True)
+            for index, row in df.iterrows():
+                value = None
+                for i in range(len(col_list)):
+                    address = col_list[i]
+
+                    if value == None:
+                        value = ",'"+str(row[address])+"'"
+                    else:
+                        value = value+",'"+str(row[address])+"'"
+                
+                insert_string = f"""
+                INSERT INTO [{self.database}].[dbo].[{self.table}] 
+                values(
+                    getdate()
+                    {value}
+                    )
+                    """ 
+                cursor.execute(insert_string)
+                cnxn.commit()
+            cursor.close()
+            self.df_insert = None
+
+            print(f"insert data successfully")     
+        except Exception as e:
+            print('error: '+str(e))
+
 
     def main(self):
         self.get_influx()
@@ -128,10 +182,12 @@ class MONITOR:
             self.edit_col()
             self.convert_data()
             self.insert_influx(self.df_insert,"iot_monitor")
+            self.df_to_db()
         else:              
+
             self.convert_data2()
             self.insert_influx(self.df_insert,"iot_monitor")  
-
+            self.df_to_db()
 
 if __name__ == "__main__":
     dotenv_file = dotenv.find_dotenv()
