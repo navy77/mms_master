@@ -41,7 +41,7 @@ class MONITOR:
             client = InfluxDBClient(self.influx_server,self.influx_port,self.influx_login,self.influx_password,self.influx_database )
             mqtt_topic_value = list(str(self.mqtt_topic).split(","))
             for i in range(len(mqtt_topic_value)):
-                query = f"select topic,modbus,broker from mqtt_consumer where topic = '{mqtt_topic_value[i]}' order by time desc limit 1"
+                query = f"select topic,modbus,broker,mac_id from mqtt_consumer where topic = '{mqtt_topic_value[i]}' order by time desc limit 1"
                 result = client.query(query)
                 if list(result):
                     result = list(result)[0][0]
@@ -127,7 +127,8 @@ class MONITOR:
                 },
                 "fields": {
                     "modbus": float(row['modbus']),
-                    "broker": float(row['broker'])
+                    "broker": float(row['broker']),
+                    "mac_id": float(row['mac_id'])
                 }
             }
             json_payload.append(json_body)
@@ -140,7 +141,7 @@ class MONITOR:
 
     def df_to_db(self):
         init_list = ['mc_no','process']
-        insert_db_value = ['broker','modbus']
+        insert_db_value = ['broker','modbus','mac_id']
         col_list = init_list+insert_db_value
         cnxn,cursor = self.conn_sql()
         try:
