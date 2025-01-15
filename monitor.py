@@ -69,7 +69,6 @@ class MONITOR:
             df["data_timestamp"] = df["data_timestamp"] + pd.DateOffset(hours=7)    
             df["data_timestamp"] = df['data_timestamp'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M'))
             current_time = datetime.now().strftime('%Y-%m-%d %H:%M')
-            print(current_time)
             df["current_time"] =  current_time
             df['data_timestamp'] = pd.to_datetime(df['data_timestamp'])
             df['current_time'] = pd.to_datetime(df['current_time'])
@@ -77,7 +76,6 @@ class MONITOR:
             df['judge'] = df['diff'].apply(lambda x: 0 if x > pd.Timedelta(minutes=5) else 1)
             # print(df)
             df = df[df['judge'] == 1]
-            print(df)
             df.drop(columns=['data_timestamp','diff','current_time','judge'],inplace=True)
             df.fillna(0,inplace=True)
             self.df_edit = df
@@ -96,6 +94,7 @@ class MONITOR:
             df = pd.merge(df_all, self.df_edit, on=['topic', 'mc_no', 'process'], how='left')
             df['modbus'] = df['modbus'].fillna(0)
             df['broker'] = df['broker'].fillna(0)
+            df['mac_id'] = df['mac_id'].fillna(0)
             self.df_insert = df
         except Exception as e:
             print('error: '+str(e))
@@ -110,6 +109,7 @@ class MONITOR:
             })
             df_all['modbus'] = 0
             df_all['broker'] = 0
+            df_all['mac_id'] = 0
             self.df_insert = df_all
         except Exception as e:
             print('error: '+str(e))
@@ -128,14 +128,14 @@ class MONITOR:
                 "fields": {
                     "modbus": float(row['modbus']),
                     "broker": float(row['broker']),
-                    "mac_id": float(row['mac_id'])
+                    "mac_id": str(row['mac_id'])
                 }
             }
             json_payload.append(json_body)
         try:
             client.write_points(json_payload)
-            print(self.df_insert)
-            print("successfully")
+            # print(self.df_insert)
+            print("Insert influxdb successfully")
         except Exception as e:
             print('error: '+str(e))
 
@@ -150,6 +150,7 @@ class MONITOR:
             df['mc_no'] = df_split[3].values
             df['process'] = df_split[2].values    
             df.drop(columns=['topic'],inplace=True)
+            print(df)
             for index, row in df.iterrows():
                 value = None
                 for i in range(len(col_list)):
@@ -166,13 +167,13 @@ class MONITOR:
                     getdate()
                     {value}
                     )
-                    """ 
+                    """
                 cursor.execute(insert_string)
                 cnxn.commit()
             cursor.close()
             self.df_insert = None
 
-            print(f"insert data successfully")     
+            print(f"insert sql successfully")     
         except Exception as e:
             print('error: '+str(e))
 

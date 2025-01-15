@@ -152,10 +152,11 @@ def add_column():
     submit_new_column = st.button("Confirm new column",key="add_col_button")
     if submit_new_column:
         init_telegraft_str_col = "status"
+        mac_id_col = "mac_id"
         df = pd.DataFrame(st.session_state.data)
         filtered_df = df[df['DataType'] == 'varchar(25)']
         telegraft_str_col = '"' + '","'.join(filtered_df['Sensor'].tolist()) + '"'
-        telegraft_str_col = f'"{init_telegraft_str_col}",{telegraft_str_col}'
+        telegraft_str_col = f'"{init_telegraft_str_col}","{mac_id_col}",{telegraft_str_col}'
 
         new_column = ', '.join(df.apply(lambda row: ' '.join(row), axis=1))  
         add_col_sql(st,os.environ["SERVER"],os.environ["USER_LOGIN"],os.environ["PASSWORD"],os.environ["DATABASE"],os.environ["TABLE_1"],new_column)
@@ -312,7 +313,7 @@ def config_initdb():
 
                 # create table monitor
                 monitor_tb = "MONITOR_IOT"
-                monitor_col = "registered datetime,mc_no varchar(10),process varchar(10),broker varchar(1),modbus varchar(1),mac_id varchar(20)"
+                monitor_col = "registered datetime,mc_no varchar(10),process varchar(10),broker varchar(10),modbus varchar(10),mac_id varchar(20)"
                 a = create_table(st,os.environ["SERVER"],os.environ["USER_LOGIN"],os.environ["PASSWORD"],os.environ["DATABASE"],table=monitor_tb,table_columns=monitor_col)
                 
                 results = [result_1,result_2,result_3,result_4,result_5,result_6]
@@ -484,9 +485,10 @@ def config_sensor_registry_add():
                     init_columns = os.environ["INIT_COLUMNS"]
                     df = pd.DataFrame(st.session_state.data)
                     init_telegraft_str_col = "status"
+                    mac_id_col = "mac_id"
                     filtered_df = df[df['DataType'] == 'varchar(25)']
                     telegraft_str_col = '"' + '","'.join(filtered_df['Sensor'].tolist()) + '"'
-                    telegraft_str_col = f'"{init_telegraft_str_col}",{telegraft_str_col}'
+                    telegraft_str_col = f'"{init_telegraft_str_col}","{mac_id_col}",{telegraft_str_col}'
                     production_column = ', '.join(df.apply(lambda row: ' '.join(row), axis=1))
                     production_column = f"{init_columns},{production_column}"
                     production_column_name = ','.join(df['Sensor'].tolist())
@@ -917,7 +919,7 @@ def calculation_method():
 
     if calculate_select_value == "2":
         production_column_names = os.environ["PRODUCTION_COLUMN_NAMES"].split(',')
-        keyword_separate_group_data = st.multiselect('Select keyword fot separate group data (max 5)',(production_column_names),key='keyword_separate_group_data',max_selections=5)
+        keyword_separate_group_data = st.multiselect('Select keyword fot separate group data (max 10)',(production_column_names),key='keyword_separate_group_data',max_selections=10)
         column_names_string = ','.join(keyword_separate_group_data)
     else:
         column_names_string=""
