@@ -1,7 +1,6 @@
 import utils.constant as constant
 import pandas as pd
 import os
-import os
 from pathlib import Path
 import sys
 import pymssql
@@ -9,6 +8,7 @@ import json
 import datetime
 from influxdb import InfluxDBClient
 import time
+from dotenv import load_dotenv,set_key
 
 class PREPARE:
 
@@ -153,6 +153,44 @@ class DATA(PREPARE):
         except Exception as e:
             self.error_msg(self.calculate2.__name__,"cannot query influxdb",e)
 
+    def calculate3(self) :
+        try:
+            result_lists = []
+            client = InfluxDBClient(self.influx_server, self.influx_port, self.influx_user_login,self.influx_password, self.influx_database)
+            mqtt_topic_value = list(str(self.mqtt_topic).split(","))
+            for i in range(len(mqtt_topic_value)):
+                query = f"select time,topic,{self.column_names} from mqtt_consumer where topic = '{mqtt_topic_value[i]}' order by time desc limit 20"
+                result = client.query(query)
+                result_df = pd.DataFrame(result.get_points())
+                result_lists.append(result_df)
+            query_influx = pd.concat(result_lists, ignore_index=True)   
+
+            # query_influx["time"] =   pd.to_datetime(query_influx["time"]).dt.tz_convert(None)
+            # query_influx["time"] = query_influx["time"] + pd.DateOffset(hours=7)    
+            # query_influx["time"] = query_influx['time'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S'))
+            env_path = Path('utils/.env')
+            load_dotenv(dotenv_path=env_path,override=True)
+            last_event = str(os.environ["SIDELAP_TIME"])
+ 
+            if not query_influx.empty :
+                if last_event !='':
+                    new_query_influx = query_influx[query_influx.time > last_event]
+                    if not new_query_influx.empty:
+                        self.df_influx = new_query_influx
+                        newest_time = self.df_influx.head(1)['time'].values[0]
+                else:
+                    self.df_influx = query_influx
+                    newest_time = self.df_influx.head(1)['time'].values[0]
+                env_path = Path('utils/.env')        
+                load_dotenv(dotenv_path=env_path,override=True)
+                set_key(env_path, "SIDELAP_TIME", str(newest_time))
+            else:
+                self.df_influx = None
+                self.info_msg(self.query_influx.__name__,"influxdb data is emply")
+        
+        except Exception as e:
+            self.error_msg(self.calculate3.__name__,"cannot query influxdb",e)
+
     def edit_col(self):
         try:
             df = self.df_influx.copy()
@@ -166,7 +204,6 @@ class DATA(PREPARE):
             df["data_timestamp"] = df['data_timestamp'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
             df.fillna(0,inplace=True)
             self.df_insert = df
-
         except Exception as e:
             self.error_msg(self.edit_col.__name__,"cannot edit dataframe data",e)
 
@@ -181,7 +218,6 @@ class DATA(PREPARE):
                 value = None
                 for i in range(len(col_list)):
                     address = col_list[i]
-
                     if value == None:
                         value = ",'"+str(row[address])+"'"
                     else:
@@ -211,8 +247,10 @@ class DATA(PREPARE):
                 self.calculate1()
             elif self.calculate_function == '2':
                 self.calculate2()
-
+            elif self.calculate_function == '3':
+                self.calculate3()
             else :self.calculate1()
+
             if not self.df_influx.empty:
                 self.edit_col()
                 time.sleep(1)

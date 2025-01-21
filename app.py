@@ -703,6 +703,7 @@ def project_config():
             production_data= st.checkbox('PRODUCTION DATA')
             mcstatus_data= st.checkbox('STATUS DATA')
             alarmlist_data= st.checkbox('ALARM DATA')
+
             if str(init_project) == 'True':
                 edit_config = st.form_submit_button('EDIT')
                 password_edit_text = st.empty()
@@ -910,10 +911,11 @@ def load_schedule_config(path,line_no):
 
 def calculation_method():
     st.caption("CALCULATION METHOD")
-    calculate_select = st.selectbox('Select calculate method',('every period time','every period time with accumulate data'),key='calculate_select')
+    calculate_select = st.selectbox('Select calculate method',('every period time','every period time with accumulate data','sidelap'),key='calculate_select')
     calculate_dict = {
         "every period time":"1",
-        "every period time with accumulate data":"2"
+        "every period time with accumulate data":"2",
+        "sidelap":"3"
             }
     calculate_select_value = calculate_dict.get(calculate_select)
 
@@ -937,7 +939,7 @@ def calculation_method():
 
 def main_layout():
     st.set_page_config(
-            page_title="MES System 2.0.5",
+            page_title="MES System 2.0.7",
             page_icon="💻",
             layout="wide",
             initial_sidebar_state="expanded",
@@ -963,7 +965,6 @@ def main_layout():
                 config_mqtt_delete()
                 if project_type_1 == 'PRODUCTION' and init_db == 'False':
                     config_sensor_registry_add()
-
             else:
                 st.error('NOT INITIAL A PROJECT YET', icon="❌")
         with tab2:
@@ -992,7 +993,6 @@ def main_layout():
                 schedule_data = st.selectbox('Select Data Schedule',('every 1 minute','every 5 minute','every 10 minute','every 30 minute', 'every hourly'),key='schedule_data')
                 schedule_status = st.selectbox('Select Status Schedule',('every 1 minute','every 5 minute','every 10 minute','every 30 minute', 'every hourly'),key='schedule_status')
                 schedule_alarm = st.selectbox('Select Alarm Schedule',('every 1 minute','every 5 minute','every 10 minute','every 30 minute', 'every hourly'),key='schedule_alarm')
-                # schedule_status_alarm = st.selectbox('Select Status/Alarm Schedule',('every 1 minute','every 5 minute','every 10 minute','every 30 minute', 'every hourly'),key='schedule_status_alarm')
             with col2:
                 st.text("\n")
                 st.text("\n")  
