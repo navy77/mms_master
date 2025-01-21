@@ -117,8 +117,6 @@ class MC_STATUS(PREPARE):
             query_influx["time"] =   pd.to_datetime(query_influx["time"]).dt.tz_convert(None)
             query_influx["time"] = query_influx["time"] + pd.DateOffset(hours=7)    
             query_influx["time"] = query_influx['time'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S'))
-            
-            print(query_influx)
             env_path = Path('utils/.env')
             load_dotenv(dotenv_path=env_path,override=True)
             last_event = str(os.environ["MC_STATUS_TIME"])
@@ -127,15 +125,15 @@ class MC_STATUS(PREPARE):
                 if last_event !='':
                     new_query_influx = query_influx[query_influx.time > last_event]
                     self.df_influx = new_query_influx
-                    newest_time = query_influx.head(1)['time'].values[0]
+                    newest_time = self.df_influx.head(1)['time'].values[0]
                 else:
                     self.df_influx = query_influx
-                    newest_time = query_influx.head(1)['time'].values[0]
+                    newest_time = self.df_influx.head(1)['time'].values[0]
 
                 env_path = Path('utils/.env')
                 load_dotenv(dotenv_path=env_path,override=True)
                 set_key(env_path, "MC_STATUS_TIME", str(newest_time))
-
+                print(newest_time)
             else:
                 self.df_influx = None
                 self.info_msg(self.query_influx.__name__,"influxdb data is emply")         

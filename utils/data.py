@@ -135,8 +135,6 @@ class DATA(PREPARE):
             ##############################################################################
             for i in range(len(mqtt_topic_value)):
                 query = f"select time,topic,{self.column_names} from mqtt_consumer where topic = '{mqtt_topic_value[i]}' and time >= {previous_time_epoch} and time < {current_time_epoch} "
-                # query = f"select time,topic,wos,d_str1,d_str2,{self.column_names} from mqtt_consumer where topic = '{mqtt_topic_value[i]}' and time >= {previous_time_epoch} and time < {current_time_epoch} " 
-
                 result = client.query(query)
                 df_result = pd.DataFrame(result.get_points())
                 
@@ -144,12 +142,9 @@ class DATA(PREPARE):
                     df_result = df_result.sort_values(by='time',ascending=False)
                     df_result = df_result.fillna(0)
                     columns = self.calculate_factor.split(',')
-                    df_result = df_result[df_result[self.calculate_factor.split(',')[0]] !='']
-                    df_result['combine_1'] = df_result[columns].astype(str).apply(lambda row: ''.join(row), axis=1)
-                    # df_result['combine_1'] = df_result['wos'].astype(str) + df_result['ball_gauge_c1'].astype(str) +df_result['ball_gauge_c2'].astype(str) + df_result['ball_gauge_c3'].astype(str) + df_result['ball_gauge_c4'].astype(str)+df_result['ball_gauge_c5'].astype(str)
+                    df_result['combine_1'] = df_result[columns].fillna('').astype(str).apply(''.join, axis=1)
                     df_result['group_index'] = (df_result['combine_1'] != df_result['combine_1'].shift()).cumsum()
                     df_result['combine_2'] = df_result['combine_1'].astype(str) + df_result['group_index'].astype(str)
-                    # df_result = df_result.drop_duplicates(subset=['combine_2'],keep='first')
                     df_result['rank'] = df_result.groupby('combine_2').cumcount() + 1
                     df_result = df_result[(df_result['rank'] == 2) | (df_result['rank'] == 1)].drop(columns=['rank'])
                     df_result = df_result.drop_duplicates(subset=['combine_2'],keep='last')
