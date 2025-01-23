@@ -61,7 +61,6 @@ def preview_production_sqlserver(server,user_login,password,database,table,mc_no
         # create table
         try:
             a=f'''SELECT TOP(5) * FROM {table} where mc_no = '{mc_no}' and process = '{process}' order by registered desc'''
-            print(a)
             cursor.execute(f'''SELECT TOP(5) * FROM {table} where mc_no = '{mc_no}' and process = '{process}' order by registered desc''')
             data=cursor.fetchall()
             cursor.close()
@@ -291,9 +290,14 @@ def config_initdb():
             initial_but = st.button("INITIAL DATABASE")
             if initial_but:
                 if os.environ["PROJECT_TYPE_1"] == "PRODUCTION":
-                    production_table_columns = os.environ["PRODUCTION_TABLE_COLUMNS"]
-                    result_1 = create_table(st,os.environ["SERVER"],os.environ["USER_LOGIN"],os.environ["PASSWORD"],os.environ["DATABASE"],os.environ["TABLE_1"],production_table_columns)
-                    result_2 = create_table(st,os.environ["SERVER"],os.environ["USER_LOGIN"],os.environ["PASSWORD"],os.environ["DATABASE"],os.environ["TABLE_LOG_1"],os.environ["TABLE_COLUMNS_LOG"])
+                    if os.environ["CALCULATE_FUNCTION"] != "3":
+                        production_table_columns = os.environ["PRODUCTION_TABLE_COLUMNS"]
+                        result_1 = create_table(st,os.environ["SERVER"],os.environ["USER_LOGIN"],os.environ["PASSWORD"],os.environ["DATABASE"],os.environ["TABLE_1"],production_table_columns)
+                        result_2 = create_table(st,os.environ["SERVER"],os.environ["USER_LOGIN"],os.environ["PASSWORD"],os.environ["DATABASE"],os.environ["TABLE_LOG_1"],os.environ["TABLE_COLUMNS_LOG"])
+                    else:
+                        production_table_columns = os.environ["PRODUCTION_TABLE_COLUMNS"]+",occurred datetime"
+                        result_1 = create_table(st,os.environ["SERVER"],os.environ["USER_LOGIN"],os.environ["PASSWORD"],os.environ["DATABASE"],os.environ["TABLE_1"],production_table_columns)
+                        result_2 = create_table(st,os.environ["SERVER"],os.environ["USER_LOGIN"],os.environ["PASSWORD"],os.environ["DATABASE"],os.environ["TABLE_LOG_1"],os.environ["TABLE_COLUMNS_LOG"])    
                 else:
                     result_1,result_2 = False,False
 
@@ -939,7 +943,7 @@ def calculation_method():
 
 def main_layout():
     st.set_page_config(
-            page_title="MES System 2.0.7",
+            page_title="MES System 2.0.8",
             page_icon="💻",
             layout="wide",
             initial_sidebar_state="expanded",

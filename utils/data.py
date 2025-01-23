@@ -40,6 +40,7 @@ class PREPARE:
         self.df_insert = None
         self.df_influx = None
         self.df_sql = None
+        self.newest_time = None
 
     def stamp_time(self):
         now = datetime.datetime.now()
@@ -177,13 +178,11 @@ class DATA(PREPARE):
                     new_query_influx = query_influx[query_influx.time > last_event]
                     if not new_query_influx.empty:
                         self.df_influx = new_query_influx
-                        newest_time = self.df_influx.head(1)['time'].values[0]
+                        self.newest_time = self.df_influx.head(1)['time'].values[0]
                 else:
                     self.df_influx = query_influx
-                    newest_time = self.df_influx.head(1)['time'].values[0]
-                env_path = Path('utils/.env')        
-                load_dotenv(dotenv_path=env_path,override=True)
-                set_key(env_path, "SIDELAP_TIME", str(newest_time))
+                    self.newest_time = self.df_influx.head(1)['time'].values[0]
+
             else:
                 self.df_influx = None
                 self.info_msg(self.query_influx.__name__,"influxdb data is emply")
@@ -198,10 +197,10 @@ class DATA(PREPARE):
             df['mc_no'] = df_split[3].values
             df['process'] = df_split[2].values
             df.drop(columns=['topic'],inplace=True)
-            df.rename(columns = {'time':'data_timestamp'}, inplace = True)
-            df["data_timestamp"] =   pd.to_datetime(df["data_timestamp"]).dt.tz_convert(None)
-            df["data_timestamp"] = df["data_timestamp"] + pd.DateOffset(hours=7)    
-            df["data_timestamp"] = df['data_timestamp'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
+            df.rename(columns = {'time':'occurred'}, inplace = True)
+            df["occurred"] =   pd.to_datetime(df["occurred"]).dt.tz_convert(None)
+            df["occurred"] = df["occurred"] + pd.DateOffset(hours=7)    
+            df["occurred"] = df['occurred'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
             df.fillna(0,inplace=True)
             self.df_insert = df
         except Exception as e:
@@ -211,6 +210,10 @@ class DATA(PREPARE):
         init_list = ['mc_no','process']
         insert_db_value = self.column_names.split(",")
         col_list = init_list+insert_db_value
+        if self.calculate_function =="3":
+            col_list.insert(0,"occurred")
+
+        print(col_list)
         cnxn,cursor = self.conn_sql()
         try:
             df = self.df_insert
@@ -230,11 +233,16 @@ class DATA(PREPARE):
                     {value}
                     )
                     """ 
+                print(insert_string)
                 cursor.execute(insert_string)
                 cnxn.commit()
             cursor.close()
             self.df_insert = None
-            
+            # update time
+            env_path = Path('utils/.env')        
+            load_dotenv(dotenv_path=env_path,override=True)
+            set_key(env_path, "SIDELAP_TIME", str(self.newest_time))
+
             self.info_msg(self.df_to_db.__name__,f"insert data successfully")     
         except Exception as e:
             print('error: '+str(e))
