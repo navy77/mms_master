@@ -10,6 +10,8 @@ import subprocess
 
 telegraf_path = "/app/telegraf.conf"
 ofelia_path = "/app/config.ini"
+# path for test streamlit run app.py
+
 # ofelia_path = "./config.ini"
 # telegraf_path = "./telegraf.conf"
 
@@ -37,6 +39,18 @@ def update_config_file2(file_path,mqtt_server):
                 file.write(new_line_2)
             else:
                 file.write(line)
+
+def update_config_file3(file_path, str_fields):
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+
+    with open(file_path, 'w') as file:
+        for line in lines:
+            if 'topics' in line:
+                new_line = f'  topics = [{str_fields}]\n'
+                file.write(new_line)
+            else:
+                file.write(line) 
 
 def log_sqlserver(st,server,user_login,password,database,table):
         #connect to db
@@ -150,6 +164,7 @@ def add_column():
     st.text(f"Current columm: {current_columns}")
     submit_new_column = st.button("Confirm new column",key="add_col_button")
     if submit_new_column:
+        # edit json_string_fields in telegraf
         init_telegraft_str_col = "status"
         mac_id_col = "mac_id"
         df = pd.DataFrame(st.session_state.data)
@@ -164,6 +179,7 @@ def add_column():
         new_production_column_name = f"{current_columns},{new_production_column_name}"
 
         update_config_file1(telegraf_path, telegraft_str_col)
+
         
         os.environ["PRODUCTION_TABLE_COLUMNS"] = str(new_production_column)
         os.environ["PRODUCTION_COLUMN_NAMES"] = str(new_production_column_name)
@@ -497,7 +513,12 @@ def config_sensor_registry_add():
                     production_column = f"{init_columns},{production_column}"
                     production_column_name = ','.join(df['Sensor'].tolist())
                     update_config_file1(telegraf_path, telegraft_str_col)
-                    
+
+                    # edit topic in telegraf
+                    telegraft_mqtt_topic = f'"data/{os.environ["DIV"].lower()}/{os.environ["PROCESS"].lower()}/#","alarm/{os.environ["DIV"].lower()}/{os.environ["PROCESS"].lower()}/#","status/{os.environ["DIV"].lower()}/{os.environ["PROCESS"].lower()}/#","mqtt/{os.environ["DIV"].lower()}/{os.environ["PROCESS"].lower()}/#"'
+                    print(telegraft_mqtt_topic)
+                    update_config_file3(telegraf_path, telegraft_mqtt_topic)
+
                     os.environ["PRODUCTION_TABLE_COLUMNS"] = str(production_column)
                     os.environ["PRODUCTION_COLUMN_NAMES"] = str(production_column_name)
                     dotenv.set_key(dotenv_file,"PRODUCTION_TABLE_COLUMNS",os.environ["PRODUCTION_TABLE_COLUMNS"])
