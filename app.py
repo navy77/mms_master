@@ -300,7 +300,6 @@ def config_initdb():
                         result_2 = create_table(st,os.environ["SERVER"],os.environ["USER_LOGIN"],os.environ["PASSWORD"],os.environ["DATABASE"],os.environ["TABLE_LOG_1"],os.environ["TABLE_COLUMNS_LOG"])    
                 else:
                     result_1,result_2 = False,False
-
                 if os.environ["PROJECT_TYPE_2"] == "MCSTATUS":
                     mcstatus_table_columns = os.environ["MCSTATUS_TABLE_COLUMNS"]
                     result_3 = create_table(st,os.environ["SERVER"],os.environ["USER_LOGIN"],os.environ["PASSWORD"],os.environ["DATABASE"],os.environ["TABLE_2"],mcstatus_table_columns)
@@ -314,7 +313,6 @@ def config_initdb():
                     result_6 = create_table(st,os.environ["SERVER"],os.environ["USER_LOGIN"],os.environ["PASSWORD"],os.environ["DATABASE"],os.environ["TABLE_LOG_3"],os.environ["TABLE_COLUMNS_LOG"])                
                 else:    
                     result_5,result_6 = False,False
-
                 # create table monitor
                 monitor_tb = "MONITOR_IOT"
                 monitor_col = "registered datetime,mc_no varchar(10),process varchar(10),broker varchar(10),modbus varchar(10),mac_id varchar(20)"
@@ -347,7 +345,9 @@ def config_initdb():
                     if project_3 != "":
                         drop_table(st,os.environ["SERVER"],os.environ["USER_LOGIN"],os.environ["PASSWORD"],os.environ["DATABASE"],os.environ["TABLE_3"])
                         drop_table(st,os.environ["SERVER"],os.environ["USER_LOGIN"],os.environ["PASSWORD"],os.environ["DATABASE"],os.environ["TABLE_LOG_3"])
-                    
+
+                    drop_table(st,os.environ["SERVER"],os.environ["USER_LOGIN"],os.environ["PASSWORD"],os.environ["DATABASE"],"MONITOR_IOT")
+
                     os.environ["INIT_DB"] = "False"
                     os.environ["INIT_PROJECT"] = "False"
                     dotenv.set_key(dotenv_file,"INIT_DB",os.environ["INIT_DB"])
@@ -956,7 +956,7 @@ def main_layout():
 
     if password == str(os.environ["ST_PASSWORD_1"]):
         text_input_container.empty()
-        tab1,tab2,tab3,tab4,tab5,tab6 = st.tabs(["⚙️ PROJECT CONFIG", "🔑 DB CONNECTION", "📂 DB CREATE", "🔍 DATAFLOW PREVIEW","📝LOG","🕞SCHEDULE"])
+        tab1,tab2,tab3,tab4,tab5,tab6 = st.tabs(["⚙️ PROJECT CONFIG", "🔑 DB CONNECTION","🕞SCHEDULE", "🔍 DATAFLOW PREVIEW","📝LOG", "📂 DB CREATE"])
 
         with tab1:
             project_config()
@@ -975,18 +975,6 @@ def main_layout():
             config_db_connect("SQLSERVER")
             config_db_connect("INFLUXDB")
         with tab3:
-            config_initdb()
-        with tab4:
-            st.header("DATAFLOW PREVIEW")
-            dataflow_production_influx()
-            dataflow_production_sql()
-        with tab5:
-            st.header("LOG")
-            if os.environ["INIT_DB"] == "True":
-                log_sqlserver(st,os.environ["SERVER"],os.environ["USER_LOGIN"],os.environ["PASSWORD"],os.environ["DATABASE"],os.environ["TABLE_LOG_1"])
-            else:
-                st.error('DB NOT INITIAL', icon="❌")    
-        with tab6:
             st.header("SCHEDULE")
             a = load_schedule_config(ofelia_path,2)
             b = load_schedule_config(ofelia_path,7)
@@ -1032,6 +1020,19 @@ def main_layout():
                 restart_container(f"ofelia{program_no}")
                 st.rerun()
             calculation_method()
+        with tab4:
+            st.header("DATAFLOW PREVIEW")
+            dataflow_production_influx()
+            dataflow_production_sql()
+        with tab5:
+            st.header("LOG")
+            if os.environ["INIT_DB"] == "True":
+                log_sqlserver(st,os.environ["SERVER"],os.environ["USER_LOGIN"],os.environ["PASSWORD"],os.environ["DATABASE"],os.environ["TABLE_LOG_1"])
+            else:
+                st.error('DB NOT INITIAL', icon="❌")    
+        with tab6:
+            config_initdb()
+
 
     elif password == str(os.environ["ST_PASSWORD_2"]):
         text_input_container.empty()

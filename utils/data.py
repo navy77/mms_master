@@ -160,12 +160,12 @@ class DATA(PREPARE):
             client = InfluxDBClient(self.influx_server, self.influx_port, self.influx_user_login,self.influx_password, self.influx_database)
             mqtt_topic_value = list(str(self.mqtt_topic).split(","))
             for i in range(len(mqtt_topic_value)):
-                query = f"select time,topic,{self.column_names} from mqtt_consumer where topic = '{mqtt_topic_value[i]}' order by time desc limit 20"
+                query = f"select time,topic,{self.column_names} from mqtt_consumer where topic = '{mqtt_topic_value[i]}' order by time desc limit 100"
                 result = client.query(query)
                 result_df = pd.DataFrame(result.get_points())
                 result_lists.append(result_df)
             query_influx = pd.concat(result_lists, ignore_index=True)   
-
+            
             # query_influx["time"] =   pd.to_datetime(query_influx["time"]).dt.tz_convert(None)
             # query_influx["time"] = query_influx["time"] + pd.DateOffset(hours=7)    
             # query_influx["time"] = query_influx['time'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S'))
@@ -175,12 +175,12 @@ class DATA(PREPARE):
  
             if not query_influx.empty :
                 if last_event !='':
-                    new_query_influx = query_influx[query_influx.time > last_event]
+                    new_query_influx = query_influx[query_influx.time > last_event] #filter
                     if not new_query_influx.empty:
                         self.df_influx = new_query_influx
                         self.newest_time = self.df_influx.head(1)['time'].values[0]
                 else:
-                    self.df_influx = query_influx
+                    self.df_influx = query_influx # no filter
                     self.newest_time = self.df_influx.head(1)['time'].values[0]
 
             else:
@@ -211,9 +211,7 @@ class DATA(PREPARE):
         insert_db_value = self.column_names.split(",")
         col_list = init_list+insert_db_value
         if self.calculate_function =="3":
-            col_list.insert(0,"occurred")
-
-        print(col_list)
+            col_list.append("occurred")
         cnxn,cursor = self.conn_sql()
         try:
             df = self.df_insert
@@ -233,7 +231,6 @@ class DATA(PREPARE):
                     {value}
                     )
                     """ 
-                print(insert_string)
                 cursor.execute(insert_string)
                 cnxn.commit()
             cursor.close()
