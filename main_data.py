@@ -23,7 +23,8 @@ try:
         mqtt_topic=os.getenv('MQTT_TOPIC_1'),
         initial_db=os.getenv('INIT_DB'),
         calculate_function=os.getenv('CALCULATE_FUNCTION'),
-        calculate_factor=os.getenv('CALCULATE_FACTOR')
+        calculate_factor=os.getenv('CALCULATE_FACTOR'),
+
     )
     influx_to_sqlserver.run()
 

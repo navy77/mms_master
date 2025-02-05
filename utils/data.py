@@ -190,6 +190,29 @@ class DATA(PREPARE):
         except Exception as e:
             self.error_msg(self.calculate3.__name__,"cannot query influxdb",e)
 
+    def calculate4(self) :
+        try:
+            result_lists = []
+            client = InfluxDBClient(self.influx_server, self.influx_port, self.influx_user_login,self.influx_password, self.influx_database)
+            mqtt_topic_value = list(str(self.mqtt_topic).split(","))
+        
+            for i in range(len(mqtt_topic_value)):
+                query = f"select time,topic,{self.column_names} from mqtt_consumer where topic = '{mqtt_topic_value[i]}' order by time desc limit 1"
+                result = client.query(query)
+                if list(result):
+                    result = list(result)[0][0]
+                    result_lists.append(result)
+                    result_df = pd.DataFrame.from_dict(result_lists)
+            self.df_influx = result_df
+
+            # ext_df = self.query_external
+            # print(ext_df)
+
+            print(self.df_influx)
+        except Exception as e:
+            self.error_msg(self.calculate4.__name__,"cannot query influxdb",e)
+
+
     def edit_col(self):
         try:
             df = self.df_influx.copy()
@@ -256,12 +279,12 @@ class DATA(PREPARE):
                 self.calculate3()
             else :self.calculate1()
 
-            if not self.df_influx.empty:
-                self.edit_col()
-                time.sleep(1)
-                print(self.df_insert)
-                self.df_to_db()
-                self.ok_msg(self.df_to_db.__name__)
+            # if not self.df_influx.empty:
+            #     self.edit_col()
+            #     time.sleep(1)
+            #     print(self.df_insert)
+            #     self.df_to_db()
+            #     self.ok_msg(self.df_to_db.__name__)
         else:
             print("db is not initial yet")
 
