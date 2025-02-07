@@ -19,12 +19,12 @@ try:
         influx_user_login=os.getenv('INFLUX_USER_LOGIN'),
         influx_password=os.getenv('INFLUX_PASSWORD'),
         influx_port=int(os.getenv('INFLUX_PORT')),
+        influx_measurement=os.getenv('INFLUX_MEASUREMENT'),
         column_names=os.getenv('PRODUCTION_COLUMN_NAMES'),
         mqtt_topic=os.getenv('MQTT_TOPIC_1'),
         initial_db=os.getenv('INIT_DB'),
         calculate_function=os.getenv('CALCULATE_FUNCTION'),
-        calculate_factor=os.getenv('CALCULATE_FACTOR'),
-
+        calculate_factor=os.getenv('CALCULATE_FACTOR')
     )
     influx_to_sqlserver.run()
 

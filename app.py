@@ -8,12 +8,12 @@ from influxdb import InfluxDBClient
 import dotenv
 import subprocess
 
-telegraf_path = "/app/telegraf.conf"
-ofelia_path = "/app/config.ini"
+# telegraf_path = "/app/telegraf.conf"
+# ofelia_path = "/app/config.ini"
 # path for test streamlit run app.py
 
-# ofelia_path = "./config.ini"
-# telegraf_path = "./telegraf.conf"
+ofelia_path = "./config.ini"
+telegraf_path = "./telegraf.conf"
 
 def update_config_file1(file_path, str_fields):
     with open(file_path, 'r') as file:
@@ -394,7 +394,7 @@ def config_db_connect(env_headers):
         if env_headers == "SQLSERVER":
             total_env_list = sql_server_env_lists = ["SERVER","DATABASE","USER_LOGIN","PASSWORD"]
         elif env_headers == "INFLUXDB":
-            total_env_list = influxdb_env_lists = ["INFLUX_SERVER","INFLUX_DATABASE","INFLUX_USER_LOGIN","INFLUX_PASSWORD","INFLUX_PORT"]
+            total_env_list = influxdb_env_lists = ["INFLUX_SERVER","INFLUX_DATABASE","INFLUX_USER_LOGIN","INFLUX_PASSWORD","INFLUX_PORT","INFLUX_MEASUREMENT"]
         else :
             st.error("don't have the connection")
 

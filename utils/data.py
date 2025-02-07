@@ -13,7 +13,7 @@ from dotenv import load_dotenv,set_key
 class PREPARE:
 
     def __init__(self,server,database,user_login,password,table,table_columns,table_log,table_columns_log,
-                 influx_server,influx_database,influx_user_login,influx_password,influx_port,
+                 influx_server,influx_database,influx_user_login,influx_password,influx_port,influx_measurement,
                  column_names,mqtt_topic,initial_db,calculate_function,calculate_factor):
         
         self.server = server
@@ -30,6 +30,7 @@ class PREPARE:
         self.influx_user_login = influx_user_login
         self.influx_password = influx_password
         self.influx_port = influx_port
+        self.influx_measurement = influx_measurement
 
         self.column_names = column_names
         self.mqtt_topic = mqtt_topic
@@ -99,10 +100,10 @@ class PREPARE:
  
 class DATA(PREPARE):
     def __init__(self,server,database,user_login,password,table,table_columns,table_log,table_columns_log,
-                 influx_server,influx_database,influx_user_login,influx_password,influx_port,
+                 influx_server,influx_database,influx_user_login,influx_password,influx_port,influx_measurement,
                  column_names,mqtt_topic,initial_db,calculate_function,calculate_factor):
         super().__init__(server,database,user_login,password,table,table_columns,table_log,table_columns_log,
-                         influx_server,influx_database,influx_user_login,influx_password,influx_port,
+                         influx_server,influx_database,influx_user_login,influx_password,influx_port,influx_measurement,
                          column_names,mqtt_topic,initial_db,calculate_function,calculate_factor)        
 
     def calculate1(self) :
@@ -112,7 +113,7 @@ class DATA(PREPARE):
             mqtt_topic_value = list(str(self.mqtt_topic).split(","))
         
             for i in range(len(mqtt_topic_value)):
-                query = f"select time,topic,{self.column_names} from mqtt_consumer where topic = '{mqtt_topic_value[i]}' order by time desc limit 1"
+                query = f"select time,topic,{self.column_names} from {self.influx_measurement} where topic = '{mqtt_topic_value[i]}' order by time desc limit 1"
                 result = client.query(query)
                 if list(result):
                     result = list(result)[0][0]
@@ -135,7 +136,7 @@ class DATA(PREPARE):
             print(f"current:{current_time_epoch}")
             ##############################################################################
             for i in range(len(mqtt_topic_value)):
-                query = f"select time,topic,{self.column_names} from mqtt_consumer where topic = '{mqtt_topic_value[i]}' and time >= {previous_time_epoch} and time < {current_time_epoch} "
+                query = f"select time,topic,{self.column_names} from {self.influx_measurement} where topic = '{mqtt_topic_value[i]}' and time >= {previous_time_epoch} and time < {current_time_epoch} "
                 result = client.query(query)
                 df_result = pd.DataFrame(result.get_points())
                 
@@ -149,6 +150,7 @@ class DATA(PREPARE):
                     df_result['rank'] = df_result.groupby('combine_2').cumcount() + 1
                     df_result = df_result[(df_result['rank'] == 2) | (df_result['rank'] == 1)].drop(columns=['rank'])
                     df_result = df_result.drop_duplicates(subset=['combine_2'],keep='last')
+                    df_result = df_result.sort_values(by='time',ascending=True)
                 self.df_influx = pd.concat([self.df_influx,df_result],ignore_index=True)
 
         except Exception as e:
@@ -160,15 +162,12 @@ class DATA(PREPARE):
             client = InfluxDBClient(self.influx_server, self.influx_port, self.influx_user_login,self.influx_password, self.influx_database)
             mqtt_topic_value = list(str(self.mqtt_topic).split(","))
             for i in range(len(mqtt_topic_value)):
-                query = f"select time,topic,{self.column_names} from mqtt_consumer where topic = '{mqtt_topic_value[i]}' order by time desc limit 100"
+                query = f"select time,topic,{self.column_names} from {self.influx_measurement} where topic = '{mqtt_topic_value[i]}' order by time desc limit 100"
                 result = client.query(query)
                 result_df = pd.DataFrame(result.get_points())
                 result_lists.append(result_df)
             query_influx = pd.concat(result_lists, ignore_index=True)   
-            
-            # query_influx["time"] =   pd.to_datetime(query_influx["time"]).dt.tz_convert(None)
-            # query_influx["time"] = query_influx["time"] + pd.DateOffset(hours=7)    
-            # query_influx["time"] = query_influx['time'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S'))
+        
             env_path = Path('utils/.env')
             load_dotenv(dotenv_path=env_path,override=True)
             last_event = str(os.environ["SIDELAP_TIME"])
@@ -189,29 +188,6 @@ class DATA(PREPARE):
         
         except Exception as e:
             self.error_msg(self.calculate3.__name__,"cannot query influxdb",e)
-
-    def calculate4(self) :
-        try:
-            result_lists = []
-            client = InfluxDBClient(self.influx_server, self.influx_port, self.influx_user_login,self.influx_password, self.influx_database)
-            mqtt_topic_value = list(str(self.mqtt_topic).split(","))
-        
-            for i in range(len(mqtt_topic_value)):
-                query = f"select time,topic,{self.column_names} from mqtt_consumer where topic = '{mqtt_topic_value[i]}' order by time desc limit 1"
-                result = client.query(query)
-                if list(result):
-                    result = list(result)[0][0]
-                    result_lists.append(result)
-                    result_df = pd.DataFrame.from_dict(result_lists)
-            self.df_influx = result_df
-
-            # ext_df = self.query_external
-            # print(ext_df)
-
-            print(self.df_influx)
-        except Exception as e:
-            self.error_msg(self.calculate4.__name__,"cannot query influxdb",e)
-
 
     def edit_col(self):
         try:
