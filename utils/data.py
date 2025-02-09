@@ -139,7 +139,6 @@ class DATA(PREPARE):
                 query = f"select time,topic,{self.column_names} from {self.influx_measurement} where topic = '{mqtt_topic_value[i]}' and time >= {previous_time_epoch} and time < {current_time_epoch} "
                 result = client.query(query)
                 df_result = pd.DataFrame(result.get_points())
-                
                 if not df_result.empty:
                     df_result = df_result.sort_values(by='time',ascending=False)
                     df_result = df_result.fillna(0)
@@ -151,6 +150,7 @@ class DATA(PREPARE):
                     df_result = df_result[(df_result['rank'] == 2) | (df_result['rank'] == 1)].drop(columns=['rank'])
                     df_result = df_result.drop_duplicates(subset=['combine_2'],keep='last')
                     df_result = df_result.sort_values(by='time',ascending=True)
+
                 self.df_influx = pd.concat([self.df_influx,df_result],ignore_index=True)
 
         except Exception as e:
@@ -189,6 +189,39 @@ class DATA(PREPARE):
         except Exception as e:
             self.error_msg(self.calculate3.__name__,"cannot query influxdb",e)
 
+    def calculate4(self) :
+        try:
+            client = InfluxDBClient(self.influx_server, self.influx_port, self.influx_user_login,self.influx_password, self.influx_database)
+            mqtt_topic_value = list(str(self.mqtt_topic).split(","))
+            now = datetime.datetime.now()
+            current_time_epoch = int(time.time()) * 1000 *1000 *1000
+            one_hour_ago = now - datetime.timedelta(hours=1)
+            previous_time_epoch = int(one_hour_ago.timestamp()) * 1000 *1000 *1000
+            print(f"prev:{previous_time_epoch}")
+            print(f"current:{current_time_epoch}")
+            ##############################################################################
+            for i in range(len(mqtt_topic_value)):
+                query = f"select time,topic,{self.column_names} from {self.influx_measurement} where topic = '{mqtt_topic_value[i]}' and time >= {previous_time_epoch} and time < {current_time_epoch} "
+                result = client.query(query)
+                df_result = pd.DataFrame(result.get_points())
+                
+                if not df_result.empty:
+                    df_result = df_result.sort_values(by='time',ascending=False)
+                    df_result = df_result.fillna(0)
+                    columns = self.calculate_factor.split(',')
+                    df_result['combine_1'] = df_result[columns].fillna('').astype(str).apply(''.join, axis=1)
+                    df_result['group_index'] = (df_result['combine_1'] != df_result['combine_1'].shift()).cumsum()
+                    df_result['combine_2'] = df_result['combine_1'].astype(str) + df_result['group_index'].astype(str)
+                    df_result['rank'] = df_result.groupby('combine_2').cumcount() + 1
+                    df_result = df_result[(df_result['rank'] == 2) | (df_result['rank'] == 1)].drop(columns=['rank'])
+                    df_result = df_result.drop_duplicates(subset=['combine_2'],keep='last')
+                    df_result = df_result.sort_values(by='time',ascending=True)
+
+                self.df_influx = pd.concat([self.df_influx,df_result],ignore_index=True)
+    
+        except Exception as e:
+            self.error_msg(self.calculate4.__name__,"cannot query influxdb",e)
+
     def edit_col(self):
         try:
             df = self.df_influx.copy()
@@ -209,8 +242,10 @@ class DATA(PREPARE):
         init_list = ['mc_no','process']
         insert_db_value = self.column_names.split(",")
         col_list = init_list+insert_db_value
+
         if self.calculate_function =="3":
             col_list.append("occurred")
+
         cnxn,cursor = self.conn_sql()
         try:
             df = self.df_insert
@@ -235,9 +270,10 @@ class DATA(PREPARE):
             cursor.close()
             self.df_insert = None
             # update time
-            env_path = Path('utils/.env')        
-            load_dotenv(dotenv_path=env_path,override=True)
-            set_key(env_path, "SIDELAP_TIME", str(self.newest_time))
+            if self.calculate_function =="3":
+                env_path = Path('utils/.env')        
+                load_dotenv(dotenv_path=env_path,override=True)
+                set_key(env_path, "SIDELAP_TIME", str(self.newest_time))
 
             self.info_msg(self.df_to_db.__name__,f"insert data successfully")     
         except Exception as e:
@@ -253,14 +289,15 @@ class DATA(PREPARE):
                 self.calculate2()
             elif self.calculate_function == '3':
                 self.calculate3()
+            elif self.calculate_function == '4':
+                self.calculate4()
             else :self.calculate1()
 
-            # if not self.df_influx.empty:
-            #     self.edit_col()
-            #     time.sleep(1)
-            #     print(self.df_insert)
-            #     self.df_to_db()
-            #     self.ok_msg(self.df_to_db.__name__)
+            if not self.df_influx.empty:
+                self.edit_col()
+                time.sleep(1)
+                self.df_to_db()
+                # self.ok_msg(self.df_to_db.__name__)
         else:
             print("db is not initial yet")
 

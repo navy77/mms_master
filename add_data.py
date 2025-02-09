@@ -14,8 +14,7 @@ class ADD_DATA:
         self.influx_password = os.environ["INFLUX_PASSWORD"]
         self.influx_database = os.environ["INFLUX_DATABASE"]
         self.influx_port = os.environ["INFLUX_PORT"]
-        self.influx_column =  os.environ["PRODUCTION_COLUMN_NAMES"]
-        self.influx_measurement = os.getenv["INFLUX_MEASUREMENT"]
+        self.influx_measurement = os.environ["INFLUX_MEASUREMENT"]
 
         self.database = os.environ["DATABASE"]
         self.server = os.environ["SERVER"]
@@ -27,6 +26,7 @@ class ADD_DATA:
         self.ext_table_columns = os.environ["EXT_TABLE_COLUMNS"]
 
         self.mqtt_topic = os.environ["MQTT_TOPIC_1"]
+        self.column_names = os.environ["PRODUCTION_COLUMN_NAMES_2"]
 
         self.df_influx = None
         self.df_edit = None
@@ -67,8 +67,7 @@ class ADD_DATA:
             client = InfluxDBClient(self.influx_server,self.influx_port,self.influx_login,self.influx_password,self.influx_database )
             mqtt_topic_value = list(str(self.mqtt_topic).split(","))
             for i in range(len(mqtt_topic_value)):
-                query = f"select * from mqtt_consumer where topic = '{mqtt_topic_value[i]}' order by time desc limit 1"
-                print(query)
+                query = f"select time,topic,{self.column_names} from mqtt_consumer where topic = '{mqtt_topic_value[i]}' order by time desc limit 1"
                 result = client.query(query)
                 if list(result):
                     result = list(result)[0][0]
@@ -86,26 +85,12 @@ class ADD_DATA:
     def edit_col(self):
         try:
             df = self.df_influx.copy()
-            
+            key_merge = self.ext_table_columns.split(",")[0]
             df_split = df['topic'].str.split('/', expand=True)
             df['mc_no'] = df_split[3].values
             df['process'] = df_split[2].values
-            df = pd.merge(df, self.df_ext, on=['mc_no'], how='left')
-            df.drop(columns=['mc_no','process','host'],inplace=True)
-            # df.drop(columns=['time'],inplace=True)
-            # df.rename(columns = {'time':'data_timestamp'}, inplace = True)
-            # df["data_timestamp"] =   pd.to_datetime(df["data_timestamp"]).dt.tz_convert(None)
-            # df["data_timestamp"] = df["data_timestamp"] + pd.DateOffset(hours=7)    
-            # df["data_timestamp"] = df['data_timestamp'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M'))
-            # current_time = datetime.now().strftime('%Y-%m-%d %H:%M')
-            # df["current_time"] =  current_time
-            # df['data_timestamp'] = pd.to_datetime(df['data_timestamp'])
-            # df['current_time'] = pd.to_datetime(df['current_time'])
-            # df['diff'] = df["current_time"] -  df["data_timestamp"]
-            # df['judge'] = df['diff'].apply(lambda x: 0 if x > pd.Timedelta(minutes=5) else 1)
-            # # print(df)
-            # df = df[df['judge'] == 1]
-            # df.drop(columns=['data_timestamp','diff','current_time','judge'],inplace=True)
+            df = pd.merge(df, self.df_ext, on=[key_merge], how='left')
+            df.drop(columns=['mc_no','process'],inplace=True)
             df.fillna(0,inplace=True)
             self.df_edit = df
 
@@ -114,8 +99,7 @@ class ADD_DATA:
 
     def insert_influx(self,df,measurement):
         client = InfluxDBClient(self.influx_server,self.influx_port,self.influx_login,self.influx_password,self.influx_database)
-        fields_list = self.influx_column
-        fields_list = list(str(self.influx_column).split(","))
+        fields_list = list(df.columns)
         json_payload = []
         for _, row in df.iterrows():
             json_body = {
@@ -135,9 +119,10 @@ class ADD_DATA:
     def main(self):
         self.get_influx()
         self.query_external()
-        # if not self.df_influx.empty:
-        #     self.edit_col()
-        #     self.insert_influx(self.df_edit,self.influx_measurement)
+        if not self.df_influx.empty:
+            self.edit_col()
+            print(self.df_edit)
+            self.insert_influx(self.df_edit,self.influx_measurement)
 
 if __name__ == "__main__":
     dotenv_file = dotenv.find_dotenv()

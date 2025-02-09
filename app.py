@@ -8,12 +8,12 @@ from influxdb import InfluxDBClient
 import dotenv
 import subprocess
 
-# telegraf_path = "/app/telegraf.conf"
-# ofelia_path = "/app/config.ini"
+telegraf_path = "/app/telegraf.conf"
+ofelia_path = "/app/config.ini"
 # path for test streamlit run app.py
 
-ofelia_path = "./config.ini"
-telegraf_path = "./telegraf.conf"
+# ofelia_path = "./config.ini"
+# telegraf_path = "./telegraf.conf"
 
 def update_config_file1(file_path, str_fields):
     with open(file_path, 'r') as file:
@@ -912,6 +912,11 @@ command = python /app/autodrop.py
 schedule = @every 5m
 container = iot_monitor{program_no}
 command = python /app/monitor.py
+
+[job-run "add_external_data{program_no}"]
+schedule = @every 5m
+container = add_external_data{program_no}
+command = python /app/add_data.py
 '''
     save_schedule_config(new_config)
 
@@ -936,27 +941,43 @@ def load_schedule_config(path,line_no):
 
 def calculation_method():
     st.caption("CALCULATION METHOD")
-    calculate_select = st.selectbox('Select calculate method',('every period time','every period time with accumulate data','sidelap'),key='calculate_select')
+    calculate_select = st.selectbox('Select calculate method',('every period time','every period time with accumulate data','sidelap','combine with external data'),key='calculate_select')
     calculate_dict = {
         "every period time":"1",
         "every period time with accumulate data":"2",
-        "sidelap":"3"
+        "sidelap":"3",
+        "combine with external data":"4"
             }
     calculate_select_value = calculate_dict.get(calculate_select)
 
-    if calculate_select_value == "2":
+    if calculate_select_value == "2" or calculate_select_value == "4":
         production_column_names = os.environ["PRODUCTION_COLUMN_NAMES"].split(',')
         keyword_separate_group_data = st.multiselect('Select keyword fot separate group data (max 10)',(production_column_names),key='keyword_separate_group_data',max_selections=10)
         column_names_string = ','.join(keyword_separate_group_data)
     else:
         column_names_string=""
+
+    if calculate_select_value == "4":
+        column_names_ext = st.text_input("Enter external column like ex1,ex2,ex...  ,1st poaition is for link between data", key="column_names_ext")
+
     cal_button = st.button("SUBMIT",key='cal_button')
 
     if cal_button:
+        if calculate_select_value =="4":
+            production_col = set(os.environ["PRODUCTION_COLUMN_NAMES"].split(','))
+            external_col = set(column_names_ext.split(','))
+            production_col_2 = production_col - external_col
+            production_col_final = ','.join(production_col_2)
+        
+            os.environ['PRODUCTION_COLUMN_NAMES_2'] = str(production_col_final)
+            dotenv.set_key(dotenv_file,"PRODUCTION_COLUMN_NAMES_2",os.environ["PRODUCTION_COLUMN_NAMES_2"])
+
         os.environ['CALCULATE_FUNCTION'] = str(calculate_select_value)
         dotenv.set_key(dotenv_file,"CALCULATE_FUNCTION",os.environ["CALCULATE_FUNCTION"])
         os.environ['CALCULATE_FACTOR'] = str(column_names_string)
         dotenv.set_key(dotenv_file,"CALCULATE_FACTOR",os.environ["CALCULATE_FACTOR"])
+        os.environ['EXT_TABLE_COLUMNS'] = str(column_names_ext)
+        dotenv.set_key(dotenv_file,"EXT_TABLE_COLUMNS",os.environ["EXT_TABLE_COLUMNS"])
         st.success('CONFIEMED', icon="✅") 
         time.sleep(0.5)
         st.rerun()
@@ -964,7 +985,7 @@ def calculation_method():
 
 def main_layout():
     st.set_page_config(
-            page_title="MES System 2.0.8",
+            page_title="MES System 2.0.9",
             page_icon="💻",
             layout="wide",
             initial_sidebar_state="expanded",
