@@ -958,7 +958,7 @@ def calculation_method():
         column_names_string=""
 
     if calculate_select_value == "4":
-        column_names_ext = st.text_input("Enter external column like ex1,ex2,ex...  ,1st poaition is for link between data", key="column_names_ext")
+        column_names_ext = st.text_input("Enter external column like ex1,ex2,ex...  ,1st position is for link between data", key="column_names_ext")
 
     cal_button = st.button("SUBMIT",key='cal_button')
 

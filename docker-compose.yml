@@ -144,7 +144,7 @@ services:
       - grafana_data:/var/lib/grafana
 
 volumes:
-  # grafana_data:
+  grafana_data:
   influxdb_data1:
     driver_opts:
       type: none

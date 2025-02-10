@@ -51,6 +51,7 @@ class ADD_DATA:
             results = cursor.fetchall()
             columns = [col[0] for col in cursor.description]
             df = pd.DataFrame(results, columns=columns)
+            df = df.map(lambda x: x.lower() if isinstance(x, str) else x)
             self.df_ext = df
             return self.df_ext
         
@@ -121,7 +122,6 @@ class ADD_DATA:
         self.query_external()
         if not self.df_influx.empty:
             self.edit_col()
-            print(self.df_edit)
             self.insert_influx(self.df_edit,self.influx_measurement)
 
 if __name__ == "__main__":

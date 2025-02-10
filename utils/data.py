@@ -204,7 +204,6 @@ class DATA(PREPARE):
                 query = f"select time,topic,{self.column_names} from {self.influx_measurement} where topic = '{mqtt_topic_value[i]}' and time >= {previous_time_epoch} and time < {current_time_epoch} "
                 result = client.query(query)
                 df_result = pd.DataFrame(result.get_points())
-                
                 if not df_result.empty:
                     df_result = df_result.sort_values(by='time',ascending=False)
                     df_result = df_result.fillna(0)
@@ -213,12 +212,12 @@ class DATA(PREPARE):
                     df_result['group_index'] = (df_result['combine_1'] != df_result['combine_1'].shift()).cumsum()
                     df_result['combine_2'] = df_result['combine_1'].astype(str) + df_result['group_index'].astype(str)
                     df_result['rank'] = df_result.groupby('combine_2').cumcount() + 1
-                    df_result = df_result[(df_result['rank'] == 2) | (df_result['rank'] == 1)].drop(columns=['rank'])
+                    df_result = df_result[(df_result['rank'] == 1) | (df_result['rank'] == 1)].drop(columns=['rank'])
+
                     df_result = df_result.drop_duplicates(subset=['combine_2'],keep='last')
-                    df_result = df_result.sort_values(by='time',ascending=True)
 
                 self.df_influx = pd.concat([self.df_influx,df_result],ignore_index=True)
-    
+
         except Exception as e:
             self.error_msg(self.calculate4.__name__,"cannot query influxdb",e)
 
@@ -297,7 +296,7 @@ class DATA(PREPARE):
                 self.edit_col()
                 time.sleep(1)
                 self.df_to_db()
-                # self.ok_msg(self.df_to_db.__name__)
+                self.ok_msg(self.df_to_db.__name__)
         else:
             print("db is not initial yet")
 
