@@ -215,7 +215,8 @@ class DATA(PREPARE):
                     df_result = df_result[(df_result['rank'] == 1) | (df_result['rank'] == 1)].drop(columns=['rank'])
 
                     df_result = df_result.drop_duplicates(subset=['combine_2'],keep='last')
-
+                    df_result = df_result.sort_values(by='time',ascending=True)
+                    
                 self.df_influx = pd.concat([self.df_influx,df_result],ignore_index=True)
 
         except Exception as e:

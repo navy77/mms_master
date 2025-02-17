@@ -30,7 +30,6 @@ def update_config_file1(file_path, str_fields):
 def update_config_file2(file_path,mqtt_server):
     with open(file_path, 'r') as file:
         lines = file.readlines()
-
     with open(file_path, 'w') as file:
 
         for line in lines:
@@ -985,7 +984,7 @@ def calculation_method():
 
 def main_layout():
     st.set_page_config(
-            page_title="MES System 2.0.9",
+            page_title="MES System 2.0.10",
             page_icon="💻",
             layout="wide",
             initial_sidebar_state="expanded",
