@@ -267,6 +267,7 @@ class DATA(PREPARE):
                     """ 
                 cursor.execute(insert_string)
                 cnxn.commit()
+                time.sleep(0.02)
             cursor.close()
             self.df_insert = None
             # update time
