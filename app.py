@@ -987,6 +987,8 @@ def calculation_method():
 
     if calculate_select_value == "4":
         column_names_ext = st.text_input("Enter external column like ex1,ex2,ex...  ,1st position is for link between data", key="column_names_ext")
+    else:
+        column_names_ext = ''
 
     cal_button = st.button("SUBMIT",key='cal_button')
 
@@ -999,6 +1001,7 @@ def calculation_method():
         
             os.environ['PRODUCTION_COLUMN_NAMES_2'] = str(production_col_final)
             dotenv.set_key(dotenv_file,"PRODUCTION_COLUMN_NAMES_2",os.environ["PRODUCTION_COLUMN_NAMES_2"])
+
 
         os.environ['CALCULATE_FUNCTION'] = str(calculate_select_value)
         dotenv.set_key(dotenv_file,"CALCULATE_FUNCTION",os.environ["CALCULATE_FUNCTION"])
