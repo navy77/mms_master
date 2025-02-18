@@ -886,37 +886,66 @@ def save_schedule_config(new_config):
 
 def schedule_config(schedule_data,schedule_status,schedule_alarm):
     program_no = str(os.environ["NO"])
-    new_config = f'''
-[job-run "MMS Data{program_no}"]
-schedule = {schedule_data}
-container = mms_data{program_no}
-command = python /app/main_data.py
+    calculate_function = str(os.environ["CALCULATE_FUNCTION"])
+    if calculate_function != '4':
+        new_config = f'''
+    [job-run "MMS Data{program_no}"]
+    schedule = {schedule_data}
+    container = mms_data{program_no}
+    command = python /app/main_data.py
 
-[job-run "MMS Status{program_no}"]
-schedule = {schedule_status}
-container = mms_status{program_no}
-command = python /app/main_status.py
+    [job-run "MMS Status{program_no}"]
+    schedule = {schedule_status}
+    container = mms_status{program_no}
+    command = python /app/main_status.py
 
-[job-run "MMS Alarm{program_no}"]
-schedule = {schedule_alarm}
-container = mms_alarm{program_no}
-command = python /app/main_alarm.py
+    [job-run "MMS Alarm{program_no}"]
+    schedule = {schedule_alarm}
+    container = mms_alarm{program_no}
+    command = python /app/main_alarm.py
 
-[job-run "autodrop{program_no}"]
-schedule = @monthly
-container = auto_drop{program_no}
-command = python /app/autodrop.py
+    [job-run "autodrop{program_no}"]
+    schedule = @monthly
+    container = auto_drop{program_no}
+    command = python /app/autodrop.py
 
-[job-run "Iot monitor{program_no}"]
-schedule = @every 5m
-container = iot_monitor{program_no}
-command = python /app/monitor.py
+    [job-run "Iot monitor{program_no}"]
+    schedule = @every 5m
+    container = iot_monitor{program_no}
+    command = python /app/monitor.py
+    '''
+    else:
+        new_config = f'''
+    [job-run "MMS Data{program_no}"]
+    schedule = {schedule_data}
+    container = mms_data{program_no}
+    command = python /app/main_data.py
 
-[job-run "add_external_data{program_no}"]
-schedule = @every 5m
-container = add_external_data{program_no}
-command = python /app/add_data.py
-'''
+    [job-run "MMS Status{program_no}"]
+    schedule = {schedule_status}
+    container = mms_status{program_no}
+    command = python /app/main_status.py
+
+    [job-run "MMS Alarm{program_no}"]
+    schedule = {schedule_alarm}
+    container = mms_alarm{program_no}
+    command = python /app/main_alarm.py
+
+    [job-run "autodrop{program_no}"]
+    schedule = @monthly
+    container = auto_drop{program_no}
+    command = python /app/autodrop.py
+
+    [job-run "Iot monitor{program_no}"]
+    schedule = @every 5m
+    container = iot_monitor{program_no}
+    command = python /app/monitor.py
+
+    [job-run "add_external_data{program_no}"]
+    schedule = @every 5m
+    container = add_external_data{program_no}
+    command = python /app/add_data.py
+    '''
     save_schedule_config(new_config)
 
 def load_schedule_config(path,line_no):
