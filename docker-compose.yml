@@ -6,7 +6,7 @@ services:
       dockerfile: Dockerfile
     environment:
       - TZ=Asia/Bangkok
-    image: "mic/mms_app:2.0.11"
+    image: "mic/mms_app:2.0.12"
     container_name: 'streamlit${NO}'
     privileged: true
     volumes:
@@ -21,7 +21,7 @@ services:
     command: ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
 
   mms_data:
-    image: "mic/mms_app:2.0.11"
+    image: "mic/mms_app:2.0.12"
     container_name: 'mms_data${NO}'
     privileged: true
     volumes:
@@ -33,11 +33,11 @@ services:
     command: ["python", "main_data.py"]
     
   mms_status:
-    image: "mic/mms_app:2.0.11"
+    image: "mic/mms_app:2.0.12"
     container_name: 'mms_status${NO}'
     privileged: true
     volumes:
-      - ./.env:/app/.env
+      - ./utils/.env:/app/utils/.env
     env_file:
       - .env
     environment:
@@ -45,11 +45,11 @@ services:
     command: ["python", "main_status.py"]
 
   mms_alarm:
-    image: "mic/mms_app:2.0.11"
+    image: "mic/mms_app:2.0.12"
     container_name: 'mms_alarm${NO}'
     privileged: true
     volumes:
-      - ./.env:/app/.env
+      - ./utils/.env:/app/utils/.env
     env_file:
       - .env
     environment:
@@ -57,7 +57,7 @@ services:
     command: ["python", "main_alarm.py"] 
 
   auto_drop:
-    image: "mic/mms_app:2.0.11"
+    image: "mic/mms_app:2.0.12"
     container_name: 'auto_drop${NO}'
     privileged: true
     volumes:
@@ -69,7 +69,7 @@ services:
     command: ["python", "autodrop.py"] 
 
   iot_monitor:
-    image: "mic/mms_app:2.0.11"
+    image: "mic/mms_app:2.0.12"
     container_name: 'iot_monitor${NO}'
     privileged: true
     volumes:
@@ -81,7 +81,7 @@ services:
     command: ["python", "monitor.py"] 
     
   add_external_data:
-    image: "mic/mms_app:2.0.11"
+    image: "mic/mms_app:2.0.12"
     container_name: 'add_external_data${NO}'
     privileged: true
     volumes:

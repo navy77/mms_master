@@ -117,7 +117,7 @@ class MC_STATUS(PREPARE):
 
             query_influx["time"] =   pd.to_datetime(query_influx["time"]).dt.tz_convert(None)
             query_influx["time"] = query_influx["time"] + pd.DateOffset(hours=7)    
-            query_influx["time"] = query_influx['time'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S'))
+            query_influx["time"] = query_influx['time'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
             env_path = Path('utils/.env')
             load_dotenv(dotenv_path=env_path,override=True)
             last_event = str(os.environ["MC_STATUS_TIME"])
