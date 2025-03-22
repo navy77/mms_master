@@ -38,6 +38,7 @@ services:
     privileged: true
     volumes:
       - ./utils/.env:/app/utils/.env
+      - ./.env:/app/.env
     env_file:
       - .env
     environment:
@@ -50,6 +51,7 @@ services:
     privileged: true
     volumes:
       - ./utils/.env:/app/utils/.env
+      - ./.env:/app/.env
     env_file:
       - .env
     environment:
