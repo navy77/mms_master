@@ -115,6 +115,8 @@ class MC_ALARM(PREPARE):
                 result_lists.append(result_df)
             query_influx = pd.concat(result_lists, ignore_index=True)
 
+            query_influx = query_influx.sort_values(by='time',ascending=False)
+
             query_influx["time"] =   pd.to_datetime(query_influx["time"]).dt.tz_convert(None)
             query_influx["time"] = query_influx["time"] + pd.DateOffset(hours=7)    
             query_influx["time"] = query_influx['time'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
