@@ -37,7 +37,6 @@ services:
     container_name: 'mms_status${NO}'
     privileged: true
     volumes:
-      - ./utils/.env:/app/utils/.env
       - ./.env:/app/.env
     env_file:
       - .env
@@ -50,7 +49,6 @@ services:
     container_name: 'mms_alarm${NO}'
     privileged: true
     volumes:
-      - ./utils/.env:/app/utils/.env
       - ./.env:/app/.env
     env_file:
       - .env
