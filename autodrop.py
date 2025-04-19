@@ -7,8 +7,7 @@ import datetime
 def drop_mqtt_consumer():
 
     day = datetime.datetime.now().strftime("%d")
-    if day == '1':
-        # client = InfluxDBClient(host='192.168.0.180', port=8087, username='admin', password='admin', database='influx')
+    if day == '01':
         time.sleep(120)
         client = InfluxDBClient(os.environ["INFLUX_SERVER"], os.environ["INFLUX_PORT"], os.environ["INFLUX_USER_LOGIN"], os.environ["INFLUX_PASSWORD"], os.environ["INFLUX_DATABASE"])
         client.query('DROP MEASUREMENT mqtt_consumer')
