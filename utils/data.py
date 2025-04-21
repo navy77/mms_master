@@ -166,8 +166,9 @@ class DATA(PREPARE):
                 result = client.query(query)
                 result_df = pd.DataFrame(result.get_points())
                 result_lists.append(result_df)
-            query_influx = pd.concat(result_lists, ignore_index=True)   
-        
+            query_influx = pd.concat(result_lists, ignore_index=True)
+
+            query_influx = query_influx.sort_values(by='time',ascending=False)
             env_path = Path('utils/.env')
             load_dotenv(dotenv_path=env_path,override=True)
             last_event = str(os.environ["SIDELAP_TIME"])
