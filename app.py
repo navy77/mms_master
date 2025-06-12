@@ -1016,7 +1016,7 @@ def calculation_method():
 
 def main_layout():
     st.set_page_config(
-            page_title="MES System 2.0.13",
+            page_title="MES System 2.0.14",
             page_icon="💻",
             layout="wide",
             initial_sidebar_state="expanded",
