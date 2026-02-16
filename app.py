@@ -969,16 +969,17 @@ def load_schedule_config(path,line_no):
 
 def calculation_method():
     st.caption("CALCULATION METHOD")
-    calculate_select = st.selectbox('Select calculate method',('every period time','every period time with accumulate data','sidelap','combine with external data'),key='calculate_select')
+    calculate_select = st.selectbox('Select calculate method',('every period time','every period time with accumulate data','sidelap','combine with external data','mcb'),key='calculate_select')
     calculate_dict = {
         "every period time":"1",
         "every period time with accumulate data":"2",
         "sidelap":"3",
-        "combine with external data":"4"
+        "combine with external data":"4",
+        "mcb":"5"
             }
     calculate_select_value = calculate_dict.get(calculate_select)
 
-    if calculate_select_value == "2" or calculate_select_value == "4":
+    if calculate_select_value == "2" or calculate_select_value == "4" or calculate_select_value == "5":
         production_column_names = os.environ["PRODUCTION_COLUMN_NAMES"].split(',')
         keyword_separate_group_data = st.multiselect('Select keyword fot separate group data (max 10)',(production_column_names),key='keyword_separate_group_data',max_selections=10)
         column_names_string = ','.join(keyword_separate_group_data)
@@ -1002,7 +1003,6 @@ def calculation_method():
             os.environ['PRODUCTION_COLUMN_NAMES_2'] = str(production_col_final)
             dotenv.set_key(dotenv_file,"PRODUCTION_COLUMN_NAMES_2",os.environ["PRODUCTION_COLUMN_NAMES_2"])
 
-
         os.environ['CALCULATE_FUNCTION'] = str(calculate_select_value)
         dotenv.set_key(dotenv_file,"CALCULATE_FUNCTION",os.environ["CALCULATE_FUNCTION"])
         os.environ['CALCULATE_FACTOR'] = str(column_names_string)
@@ -1016,7 +1016,7 @@ def calculation_method():
 
 def main_layout():
     st.set_page_config(
-            page_title="MES System 2.0.14",
+            page_title="MES System 2.0.15",
             page_icon="💻",
             layout="wide",
             initial_sidebar_state="expanded",

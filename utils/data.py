@@ -223,6 +223,39 @@ class DATA(PREPARE):
         except Exception as e:
             self.error_msg(self.calculate4.__name__,"cannot query influxdb",e)
 
+    def calculate5(self) :
+        try:
+            client = InfluxDBClient(self.influx_server, self.influx_port, self.influx_user_login,self.influx_password, self.influx_database)
+            mqtt_topic_value = list(str(self.mqtt_topic).split(","))
+            now = datetime.datetime.now()
+            current_time_epoch = int(time.time()) * 1000 *1000 *1000
+            one_hour_ago = now - datetime.timedelta(hours=1)
+            previous_time_epoch = int(one_hour_ago.timestamp()) * 1000 *1000 *1000
+            print(f"prev:{previous_time_epoch}")
+            print(f"current:{current_time_epoch}")
+            ##############################################################################
+            col_all = ['time','topic']+self.column_names.split(',')
+            col_sum = self.calculate_factor
+            col_all = [x for x in col_all if x not in col_sum]
+            for i in range(len(mqtt_topic_value)):
+                query = f"select time,topic,{self.column_names} from {self.influx_measurement} where topic = '{mqtt_topic_value[i]}' and time >= {previous_time_epoch} and time < {current_time_epoch} "
+                result = client.query(query)
+                df_result = pd.DataFrame(result.get_points())
+                if not df_result.empty:
+                    df_result = df_result.sort_values(by='time',ascending=False)
+                    df_result = df_result.fillna(0)
+                    max_row = df_result.idxmax().iloc[0]
+                    df = df_result.loc[[0, max_row]]
+                    df_result = pd.DataFrame([{
+                        **{c: df[c].iloc[0] for c in col_all},  
+                        **df[col_sum].sum()                           
+                    }])
+                    df_result = df_result.sort_values(by='time',ascending=True)
+                self.df_influx = pd.concat([self.df_influx,df_result],ignore_index=True)
+
+        except Exception as e:
+            self.error_msg(self.calculate5.__name__,"cannot query influxdb",e)
+
     def edit_col(self):
         try:
             df = self.df_influx.copy()
@@ -293,6 +326,8 @@ class DATA(PREPARE):
                 self.calculate3()
             elif self.calculate_function == '4':
                 self.calculate4()
+            elif self.calculate_function == '5':
+                self.calculate5()
             else :self.calculate1()
 
             if not self.df_influx.empty:
