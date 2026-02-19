@@ -335,9 +335,8 @@ class DATA(PREPARE):
             if not self.df_influx.empty:
                 self.edit_col()
                 time.sleep(1)
-                print(self.df_insert)
-                # self.df_to_db()
-                # self.ok_msg(self.df_to_db.__name__)
+                self.df_to_db()
+                self.ok_msg(self.df_to_db.__name__)
         else:
             print("db is not initial yet")
 
